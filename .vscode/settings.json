@@ -1,0 +1,11 @@
+{
+    "window.autoDetectColorScheme": true,
+    "workbench.preferredLightColorTheme": "Visual Studio 2017 Light - C++",
+    "workbench.colorTheme": "Visual Studio 2017 Light - C++",
+    "files.associations": {
+        "cstdint": "cpp",
+        "array": "cpp",
+        "string": "cpp",
+        "string_view": "cpp"
+    }
+}

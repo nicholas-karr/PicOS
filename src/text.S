@@ -52,22 +52,43 @@ render_relevant_text_boxes:
     ldr r2, [r2] // resolve to [x, x_max]
 
     //ldr r2, =tokTransparents // Solid color
-    ldr r2, =240
+    //ldr r2, =240
+    movs r2, #240
 
 
   loop:
-    ldrb r5, [r3] // Get char to render
-    adds r3, #1 // incr cursor
+    ldr r5, [r3] // Get 4 chars to render
+    adds r3, #4 // incr cursor
 
-    mov r7, r2
-    muls r7, r5
-    adds r7, r1 // dbase + char_offset
+    mov r4, r5 // Grab all chars
+    lsrs r5, #8 // Shift array over for next time
+    uxtb r4, r4 // Get first byte
+    muls r4, r2 // Multiply by font scalar
+    adds r4, r1 // Add font address
+    str r4, [r0] // store at buf[x]
 
-    str r7, [r0] // store at buf[x]
+    mov r4, r5
+    lsrs r5, #8
+    uxtb r4, r4
+    muls r4, r2
+    adds r4, r1
+    str r4, [r0, #4]
 
-    //str r2, [r0]
+    mov r4, r5
+    lsrs r5, #8
+    uxtb r4, r4
+    muls r4, r2
+    adds r4, r1
+    str r4, [r0, #8]
 
-    adds r0, #4 // End of loop
+    muls r5, r2
+    adds r5, r1
+    str r5, [r0, #12]
+
+    
+    
+
+    adds r0, #16 // End of loop
     cmp r0, r6
     bne loop
 

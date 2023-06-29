@@ -28,13 +28,33 @@
 
 Button buttons[3] = { Button(0), Button(6), Button(11) };
 
+void __time_critical_func(core1_vga_main)() {
+    scanvideo_setup(&vga_mode);
+    scanvideo_timing_enable(true);
 
-int __time_critical_func(vga_main)() {
+    gpio_deinit(0); // Reduce banding on my board
+
+    while (true) {
+        scanvideo_scanline_buffer* scanline_buffer = scanvideo_begin_scanline_generation(false);
+        if (scanline_buffer != nullptr) {
+            int y = scanvideo_scanline_number(scanline_buffer->scanline_id);
+            int frame = scanvideo_frame_number(scanline_buffer->scanline_id);
+
+            renderTextBoxes(scanline_buffer, y);
+
+            scanvideo_end_scanline_generation(scanline_buffer);
+        }
+    }
+}
+
+
+
+int __time_critical_func(core0_vga_main)() {
     set_sys_clock_khz(148500, true); // 720p //todo: * 3/2
     //set_sys_clock_khz(74250, true); // 720p
     //set_sys_clock_khz(120000, true); // vga_mode_1280x1024_40
     //setup_default_uart();
-    //stdio_init_all();
+    stdio_init_all();
 
     screen.init(vga_mode);
 
@@ -42,20 +62,13 @@ int __time_critical_func(vga_main)() {
 
     build_font();
 
-    scanvideo_setup(&vga_mode);
-    scanvideo_timing_enable(true);
+    multicore_launch_core1(core1_vga_main);
 
-    gpio_deinit(0); // Reduce banding on my board
+    
 
 
     while (true) {
-        scanvideo_scanline_buffer* scanline_buffer = scanvideo_begin_scanline_generation(true);
-        int y = scanvideo_scanline_number(scanline_buffer->scanline_id);
-        int frame = scanvideo_frame_number(scanline_buffer->scanline_id);
-
-        renderTextBoxes(scanline_buffer, y);
-
-        scanvideo_end_scanline_generation(scanline_buffer);
+        
 
     
         if (scanvideo_in_vblank()) {
@@ -68,6 +81,17 @@ int __time_critical_func(vga_main)() {
                 screen.x_start--;
             }
 
+            int c = getchar();
+            //int c = EOF;
+            if (c == EOF) {}
+            else if (c == 'l') {
+                //screen.x_start--;
+                printf("got it\r\n");
+            }
+            else if (c == 'r') {
+                //screen.x_start++;
+            }
+
             // Reset text box cursors
             resetTextBoxes();
         }
@@ -76,15 +100,7 @@ int __time_critical_func(vga_main)() {
 
 
 int main() {
-    auto i = offsetof(TextBox, cursor);
+    //auto i = offsetof(TextBox, cursor);
 
-    vga_main();
-
-    uint32_t x = 1;
-
-    printf("%d\r\n", x);
-
-    //testfunc(&x);
-
-    printf("%d\r\n", x);
+    core0_vga_main();
 }

@@ -8,5 +8,6 @@
         "string": "cpp",
         "string_view": "cpp",
         "compare": "cpp"
-    }
+    },
+    "cmake.configureOnOpen": true
 }

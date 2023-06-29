@@ -74,16 +74,17 @@ int __time_critical_func(vga_main)() {
     }
 }
 
-extern "C" void testfunc(uint32_t* addr);
 
 int main() {
+    auto i = offsetof(TextBox, cursor);
+
     vga_main();
 
     uint32_t x = 1;
 
     printf("%d\r\n", x);
 
-    testfunc(&x);
+    //testfunc(&x);
 
     printf("%d\r\n", x);
 }

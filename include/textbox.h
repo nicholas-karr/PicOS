@@ -19,13 +19,12 @@ struct TextLinePreamble {
     }
 };
 
-class TextBox {
-public:
+struct __attribute__((__packed__)) TextBox {
     uint16_t x, x_max;
     uint16_t y, y_max;
 
     char* cursor;
-    char text[80];
+    char text[500]; //[80];
 
     void initWholeScreen() {
         x = y = 0;
@@ -69,6 +68,8 @@ void resetTextBoxes() {
 extern "C" {
 void render_relevant_text_boxes(uint32_t* buf, uint32_t* font, TextBox** relevant);
 }
+extern "C" char* testfunc(uint32_t* buf, uint32_t* font, TextBox** relevant);
+volatile char* ret;
 
 // Fill layer 0 with text
 void __time_critical_func(renderTextBoxes) (scanvideo_scanline_buffer* dest, int y) {
@@ -99,7 +100,7 @@ void __time_critical_func(renderTextBoxes) (scanvideo_scanline_buffer* dest, int
     //render_relevant_text_boxes(buf, dbase, relevant);
     //buf += expectedWidth;
 
-    render_relevant_text_boxes(buf, dbase, nullptr);
+    render_relevant_text_boxes(buf, dbase, relevant);
     buf += 160;
 
     /*for (uint32_t x = 0; x < expectedWidth; x += 1) {

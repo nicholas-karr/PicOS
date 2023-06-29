@@ -13,11 +13,16 @@
 // relevant: sorted by x_start
 // void testfunc(uint32_t* buf)
 testfunc:
-    push {r4, r5, r6, r7, lr}
-    LDR r4, [r0]
-    ADDS r4, #0x01
-    STR r4, [r0]
-    pop  {r4, r5, r6, r7, pc}
+    ldr r2, [r2] // resolve to pointer to first text box
+    ldr r3, [r2, #8] // get cursor (don't store back for now)
+    ldr r2, [r2] // resolve to [x, x_max]
+
+    eors r0, r0
+    ldrb r0, [r3] // Get char to render
+
+    //mov r0, r3
+
+    bx lr // return
 
 
 // r1 buf
@@ -33,26 +38,37 @@ testfunc:
 // relevant: sorted by x_start
 // void render_relevant_text_boxes(uint32_t* buf, uint32_t* font, TextBox** relevant)
 render_relevant_text_boxes:
-    // r0: buf, r1: ptr to font, r2: none
+    // r0: buf, r1: ptr to font, r2: relevant
+    // r3: cursor, r4: x, r5: char to render?
+    // r6: end of buf r7: char offset
     push {r4, r5, r6, r7, lr}
-    
-    eors r4, r4 // x counter = 0
-
-    //ldr r5, =tokTransparents // Solid color
 
     movs r6, #160
     lsls r6, 2 // get 160 * 4 for buf max
+    adds r6, r0 // make r6 into loop max
 
-    ldr r5, =0x3CF0 // FONT_HEIGHT * FONT_WIDTH_WORDS * 'a' * (4 bytes per uint32_t)
+    ldr r2, [r2] // resolve to pointer to first text box
+    ldr r3, [r2, #8] // get cursor (don't store back for now)
+    ldr r2, [r2] // resolve to [x, x_max]
+
+    //ldr r2, =tokTransparents // Solid color
+    ldr r2, =240
 
 
   loop:
-    adds r7, r5, r1
+    ldrb r5, [r3] // Get char to render
+    adds r3, #1 // incr cursor
 
-    str r7, [r0, r4] // store at buf[x]
+    mov r7, r2
+    muls r7, r5
+    adds r7, r1 // dbase + char_offset
 
-    adds r4, #4 // End of loop
-    cmp r4, r6
+    str r7, [r0] // store at buf[x]
+
+    //str r2, [r0]
+
+    adds r0, #4 // End of loop
+    cmp r0, r6
     bne loop
 
     pop  {r4, r5, r6, r7, pc}

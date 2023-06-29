@@ -1,32 +1,7 @@
 #include "fontbuild.h"
 #include "screen.h"
 #include "ringbuf.h"
-
-static __not_in_flash("x") uint16_t tokTextLineBegin[] = {
-    COMPOSABLE_COLOR_RUN, 0, 0 /* hcal */,  // At least 3 pixels of black
-    COMPOSABLE_RAW_RUN, 0,                  // 
-    1280 /* run length - 3 */, 0, 0
-};
-
-static __not_in_flash("y") uint16_t tokTextLineEnd[] = {
-#if FRAGMENT_WORDS == 5 || FRAGMENT_WORDS == 3
-        COMPOSABLE_RAW_1P, 0,
-#endif
-#if FRAGMENT_WORDS == 3
-        COMPOSABLE_RAW_1P, 0,
-#endif
-#if FRAGMENT_WORDS >= 4
-        COMPOSABLE_RAW_2P, 0,
-        0, COMPOSABLE_RAW_1P_SKIP_ALIGN,
-        0, 0,
-#endif
-        COMPOSABLE_EOL_SKIP_ALIGN, 0xffff // eye catcher
-};
-
-// A fragment of just transparent pixels
-static __not_in_flash("y") uint16_t tokTransparents[] = {
-    1, 1, 1, 1
-};
+#include "textbox-decls.h"
 
 struct TextLinePreamble {
     uint16_t buf[8];
@@ -91,11 +66,16 @@ void resetTextBoxes() {
     }
 }
 
+extern "C" {
+void render_relevant_text_boxes(uint32_t* buf, uint32_t* font, TextBox** relevant);
+}
+
 // Fill layer 0 with text
-void renderTextBoxes(scanvideo_scanline_buffer* dest, int y) {
-    constexpr int expectedWidth = 160; //(1280 / (8 * 2));
+void __time_critical_func(renderTextBoxes) (scanvideo_scanline_buffer* dest, int y) {
+    constexpr int expectedWidth = 160; //160 //(1280 / (8 * 2));
 
     TextBox* relevant[textBoxesCount];
+    TextBox** lastRelevant = relevant + 1;
     int relevantCount = 0;
 
     // Store which text boxes are on this scanline
@@ -106,38 +86,45 @@ void renderTextBoxes(scanvideo_scanline_buffer* dest, int y) {
         }
     }
 
+    // sort by x_min
+
 
     // Pointer to an array of pointers to tokens/colors
     uint32_t* buf = dest->data;
 
     *buf++ = ((uintptr_t)(tokTextLineBegin));
-    //*buf++ = ((uintptr_t)(getPreamble(expectedWidth * 2 * FRAGMENT_WORDS)));
 
-    uint32_t* dbase = font_raw_pixels + FONT_WIDTH_WORDS * (y % (font->line_height));
+    uint32_t* dbase = font_raw_pixels + FONT_WIDTH_WORDS * (y % FONT_HEIGHT);
 
-    //for (int x = screen.x_start; x < screen.x_end; x += 6) {
-    for (int x = 0; x < expectedWidth; x += 1) {
-        //todo: align
+    //render_relevant_text_boxes(buf, dbase, relevant);
+    //buf += expectedWidth;
 
-        //*buf++ = ((uintptr_t)(dbase + 'A' * FONT_HEIGHT * FONT_WIDTH_WORDS));
+    render_relevant_text_boxes(buf, dbase, nullptr);
+    buf += 160;
 
-        TextBox* text = &textBoxes[0];
+    /*for (uint32_t x = 0; x < expectedWidth; x += 1) {
+        for (TextBox** i = relevant; i < lastRelevant; ++i) {
+            TextBox* text = *i;
+            if (x >= text->x & x <= text->x_max) {
+                char* cursorItr = text->cursor;
 
-        char* cursorItr = text->cursor;
+                // Start rendering until the text box is over
+                while (x < expectedWidth) {
+                    //*buf++ = ((uintptr_t)(dbase + *(cursorItr++) * FONT_HEIGHT * FONT_WIDTH_WORDS));
+                    //*buf++ = ((uintptr_t)(dbase + *cursorItr * FONT_HEIGHT * FONT_WIDTH_WORDS));
+                    const int v =  'A' * FONT_HEIGHT * FONT_WIDTH_WORDS;
+                    *buf++ = ((uintptr_t)(dbase + v));
 
-        // Start rendering until the text box is over
-        while (x < expectedWidth) {
-            //*buf++ = ((uintptr_t)(dbase + *(cursorItr++) * FONT_HEIGHT * FONT_WIDTH_WORDS));
-            *buf++ = ((uintptr_t)(dbase + *cursorItr * FONT_HEIGHT * FONT_WIDTH_WORDS));
-
-            x += 1;
+                    x += 1;
+                    //render_relevant_text_boxes((uint32_t*)&x, nullptr, nullptr);
+                }
+            }
         }
-
 
         // Put out 4 transparent pixels if no text is visible here
         //todo: color run of transparent pixels between text boxes
         //*buf++ = (uintptr_t)tokTransparents;
-    }
+    }*/
 
     *buf++ = ((uintptr_t)(tokTextLineEnd));
     *buf++ = 0;

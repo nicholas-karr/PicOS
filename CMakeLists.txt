@@ -11,17 +11,18 @@ include(pico_sdk_import.cmake)
 include(pico_extras_import.cmake)
 include(pico_playground_import.cmake)
 
-project(picos C CXX)
+project(picos C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
 pico_sdk_init()
 
 add_executable(picos
+        src/text.S
         src/main.cpp
         src/font8.c
         src/font6.c
-        src/font10.c
+        src/font10.c  
         )
 
 target_compile_definitions(picos PRIVATE
@@ -35,6 +36,10 @@ pico_add_extra_outputs(picos)
 
 pico_enable_stdio_usb(picos 1)
 pico_enable_stdio_uart(picos 0)
+
+target_link_options(picos PUBLIC
+        "-fno-fat-lto-objects"
+        "-flto")
 
 
 target_link_libraries(picos PRIVATE

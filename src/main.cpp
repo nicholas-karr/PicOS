@@ -73,23 +73,25 @@ int __time_critical_func(core0_vga_main)() {
     
         if (scanvideo_in_vblank()) {
             //uint16_t& hcal = beginning_of_line[2];
-            if (buttons[0].get()) {
+            //if (buttons[0].get()) {
                 //color = ((color << 1) == 0) ? 1 : color << 1; //rollover
-                screen.x_start++;
-            }
-            if (buttons[2].get()) {
-                screen.x_start--;
-            }
+            //    screen.x_start++;
+            //}
+            //if (buttons[2].get()) {
+            //    screen.x_start--;
+            //}
 
             int c = getchar();
             //int c = EOF;
             if (c == EOF) {}
-            else if (c == 'l') {
-                //screen.x_start--;
-                printf("got it\r\n");
-            }
             else if (c == 'r') {
-                //screen.x_start++;
+                //screen.x_start--;
+                tokTextLineBegin[2]++;
+                printf("to %d\r\n", tokTextLineBegin[2]);
+            }
+            else if (c == 'l') {
+                tokTextLineBegin[2]--;
+                printf("to %d\r\n", tokTextLineBegin[2]);
             }
 
             // Reset text box cursors

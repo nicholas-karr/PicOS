@@ -2,14 +2,14 @@
 
 class Screen {
 public:
-    int width;
-    int height;
+    uint16_t width;
+    uint16_t height;
 
-    int x_start;
-    int x_end;
+    uint16_t x_start;
+    uint16_t x_end;
 
-    int y_start;
-    int y_end;
+    uint16_t y_start;
+    uint16_t y_end;
 
     void init(const scanvideo_mode_t& mode) {
         width = x_end = mode.width;

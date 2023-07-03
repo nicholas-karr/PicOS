@@ -90,6 +90,7 @@ struct TextLinePreamble {
 struct __attribute__((__packed__)) TextLineEntry {
     const char* buf;
     const uint32_t* c_end;
+    uint32_t* y;
 };
 
 struct TextBox {
@@ -232,24 +233,33 @@ void __time_critical_func(renderTextBoxes) (scanvideo_scanline_buffer* dest, uin
     uint32_t* bufItr = buf;
 
     for (uint16_t i = 0; i < relevantCount && entriesCnt < 8; ++i) {
-        if (xitr < relevant[i]->x) {
+        const TextBox& box = *relevant[i];
+
+        uint16_t cappedX = std::min(box.x, screen.x_end);
+
+        if (box.x > screen.x_end) { 
+            //continue; 
+            } // should be setting 'visible' flag too
+        
+        if (xitr < cappedX) {
             // Pre-padding
-            entries[entriesCnt++] = { (char*)nullptr, bufItr += ((relevant[i]->x - xitr) / 4) }; // 4 pixels per 32-bit ptr
-            xitr = relevant[i]->x;
+            entries[entriesCnt++] = { (char*)nullptr, bufItr += ((cappedX - xitr) / 4) }; // 4 pixels per 32-bit ptr
+            xitr = cappedX;
         }
 
         auto line = relevant[i]->lineAt(0);      //(y);
         if (line) {
             size_t length = line->alignedSize();
-            entries[entriesCnt++] = { line->data(), bufItr += length }; // todo: replace aligned size with unaligned and use geq in asm
+            uint16_t localY = y - relevant[i]->y;
+            entries[entriesCnt++] = { line->data(), bufItr += length, font_raw_pixels + FONT_WIDTH_WORDS * (localY % FONT_HEIGHT) }; // todo: replace aligned size with unaligned and use geq in asm
             xitr += length * 4; //length * FONT_WIDTH_WORDS;
         }
     }
 
-    entries[entriesCnt++] = { (char*)nullptr, buf + 160 }; // Fill in the rest of the line with transparent pixels
+    /*if (bufItr <= buf + 160)*/ { entries[entriesCnt++] = { (char*)nullptr, buf + 160 }; } // Fill in the rest of the line with transparent pixels
     entries[entriesCnt++] = { (char*)nullptr, nullptr }; // End of line meta token
 
-    uint32_t* font = font_raw_pixels + FONT_WIDTH_WORDS * (y % FONT_HEIGHT);
+    uint32_t* font = font_raw_pixels; // + FONT_WIDTH_WORDS * (y % FONT_HEIGHT);
 
     render_relevant_text_boxes(buf, font, entries);
     buf += 160;

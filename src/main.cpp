@@ -1,3 +1,5 @@
+#include <atomic>
+
 #include <stdint.h>
 #include <string.h>
 #include "pico.h"
@@ -29,6 +31,8 @@
 
 Button buttons[3] = { Button(0), Button(6), Button(11) };
 
+std::atomic<uint16_t> frameNum;
+
 void __time_critical_func(core1_vga_main)() {
     scanvideo_setup(&vga_mode);
     scanvideo_timing_enable(true);
@@ -39,7 +43,12 @@ void __time_critical_func(core1_vga_main)() {
         scanvideo_scanline_buffer* scanline_buffer = scanvideo_begin_scanline_generation(false);
         if (scanline_buffer != nullptr) {
             uint16_t y = scanvideo_scanline_number(scanline_buffer->scanline_id);
-            uint16_t frame = scanvideo_frame_number(scanline_buffer->scanline_id);
+            frameNum = scanvideo_frame_number(scanline_buffer->scanline_id);
+
+            //textBoxes[0].y = frameNum;
+            //textBoxes[0].y_max = frameNum + 100;
+
+            
 
             renderTextBoxes(scanline_buffer, y);
 
@@ -63,11 +72,11 @@ int __time_critical_func(core0_vga_main)() {
 
     build_font();
 
-    TextBox& spinbox1 = textBoxes[1];
-    TextBox& spinbox2 = textBoxes[0];
+    TextBox& spinbox1 = textBoxes[0];
+    TextBox& spinbox2 = textBoxes[1];
     textBoxesCount = 2;
 
-    spinbox1.init(40, 200, 0, 200, "CONTENTS OF THE FIRST\nNEWLINE", false);
+    spinbox1.init(40, 200, 0, 200, "CONTENTS OF THE FIRST\nNEWLINE", true);
     spinbox2.init(300, 400, 100, 300, "CONTENTS OF THE SECOND\nNEWLINE\n\nHELLO", false);
 
     multicore_launch_core1(core1_vga_main);
@@ -80,6 +89,7 @@ int __time_critical_func(core0_vga_main)() {
 
     
         if (scanvideo_in_vblank()) {
+            
             //uint16_t& hcal = beginning_of_line[2];
             //if (buttons[0].get()) {
                 //color = ((color << 1) == 0) ? 1 : color << 1; //rollover
@@ -96,7 +106,23 @@ int __time_critical_func(core0_vga_main)() {
             //spinbox2.x = (cos(ms + M_PI_2) + 1) * 200;
             //spinbox2.y = (sin(ms + M_PI_2) + 1) * 300;
 
-            int c = getchar();
+            spinbox1.x = 250.0 + 150.0 * cosf(float(frameNum) / 50.0);
+            spinbox1.x = ROUND_UP(spinbox1.x, 4);
+            spinbox1.x_max = spinbox1.x + 80;
+
+            spinbox1.y = 250.0 + 150.0 * sinf(float(frameNum) / 50.0);
+            spinbox1.y = ROUND_UP(spinbox1.y, 4);
+            spinbox1.y_max = spinbox1.y + 160;
+
+            spinbox2.x = 250.0 + 150.0 * cosf(float(frameNum) / 50.0 + M_PI);
+            spinbox2.x = ROUND_UP(spinbox2.x, 4);
+            spinbox2.x_max = spinbox2.x + 80;
+
+            spinbox2.y = 250.0 + 150.0 * sinf(float(frameNum) / 50.0 + M_PI);
+            spinbox2.y = ROUND_UP(spinbox2.y, 4);
+            spinbox2.y_max = spinbox2.y + 160;
+
+            int c = getchar_timeout_us(0);
             //int c = EOF;
             if (c == EOF) {}
             else if (c == 'r') {
@@ -114,7 +140,7 @@ int __time_critical_func(core0_vga_main)() {
 
 
 int main() {
-    //auto i = offsetof(TextBox, cursor);
+    auto i = sizeof(TextLineEntry);
 
     core0_vga_main();
 }

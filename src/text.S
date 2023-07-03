@@ -36,14 +36,12 @@ testfunc:
 // void render_relevant_text_boxes(uint32_t* buf, uint32_t* font, TextLineEntry* entries)
 render_relevant_text_boxes:
     // r0: buf, r1: ptr to font, r2: entries
-    push {r4, r5, r6, r7} // This is a leaf function, don't touch lr
+    push {r4, r5, r6, r7, r1} // This is a leaf function, don't touch lr
 
-    movs r3, #240 // Font scalar
-
-    subs r2, #8 // undo moving end of loop to front
+    subs r2, #12 // undo moving end of loop to front
 
     loop_entries:
-      adds r2, #8 // redundant end of loop
+      adds r2, #12 // redundant end of loop
 
       // Resolve first entry
       // r4: loop end, r5: characters
@@ -59,6 +57,15 @@ render_relevant_text_boxes:
       // Go to transparent for cbuf == 0
       cmp r5, #0
       beq transparent_entry
+
+      // adjust r1
+      //ldr r3, [r2, #8] // Load y of string (4 * (y % 15))
+      //ldr r1, [sp] // Load back font pointer that got clobbered
+      ldr r1, [r2, #8] // Load font ptr
+      
+      //adds r1, r3
+
+      movs r3, #240 // Font scalar
       
       text_entry:
         loop_text:
@@ -113,5 +120,5 @@ render_relevant_text_boxes:
 
 
     end:
-    pop  {r4, r5, r6, r7}
+    pop  {r1, r4, r5, r6, r7}
     bx lr

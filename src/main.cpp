@@ -8,6 +8,7 @@
 #include "pico/multicore.h"
 #include "pico/sync.h"
 #include "pico/stdlib.h"
+#include <cmath>
 
 #include "pico.h"
 #include "hardware/structs/sio.h"
@@ -37,8 +38,8 @@ void __time_critical_func(core1_vga_main)() {
     while (true) {
         scanvideo_scanline_buffer* scanline_buffer = scanvideo_begin_scanline_generation(false);
         if (scanline_buffer != nullptr) {
-            int y = scanvideo_scanline_number(scanline_buffer->scanline_id);
-            int frame = scanvideo_frame_number(scanline_buffer->scanline_id);
+            uint16_t y = scanvideo_scanline_number(scanline_buffer->scanline_id);
+            uint16_t frame = scanvideo_frame_number(scanline_buffer->scanline_id);
 
             renderTextBoxes(scanline_buffer, y);
 
@@ -58,9 +59,16 @@ int __time_critical_func(core0_vga_main)() {
 
     screen.init(vga_mode);
 
-    setWholeScreenDocument();
+    //setWholeScreenDocument();
 
     build_font();
+
+    TextBox& spinbox1 = textBoxes[1];
+    TextBox& spinbox2 = textBoxes[0];
+    textBoxesCount = 2;
+
+    spinbox1.init(40, 200, 0, 200, "CONTENTS OF THE FIRST\nNEWLINE", false);
+    spinbox2.init(300, 400, 100, 300, "CONTENTS OF THE SECOND\nNEWLINE\n\nHELLO", false);
 
     multicore_launch_core1(core1_vga_main);
 
@@ -81,6 +89,13 @@ int __time_critical_func(core0_vga_main)() {
             //    screen.x_start--;
             //}
 
+
+            double ms = double(time_us_64()) / 1'000'000'000.0;
+            //spinbox1.x = (cos(ms) + 1) * 200;
+            //spinbox1.y = (sin(ms) + 1) * 300;
+            //spinbox2.x = (cos(ms + M_PI_2) + 1) * 200;
+            //spinbox2.y = (sin(ms + M_PI_2) + 1) * 300;
+
             int c = getchar();
             //int c = EOF;
             if (c == EOF) {}
@@ -93,9 +108,6 @@ int __time_critical_func(core0_vga_main)() {
                 tokTextLineBegin[2]--;
                 printf("to %d\r\n", tokTextLineBegin[2]);
             }
-
-            // Reset text box cursors
-            resetTextBoxes();
         }
     }
 }

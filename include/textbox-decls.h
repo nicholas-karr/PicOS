@@ -1,6 +1,6 @@
 #include <pico/scanvideo.h>
 
-#define HCAL_DEFAULT 50 //todo: get rid of the ~10 pixels of right overscan (alignment issues :/)
+#define HCAL_DEFAULT 54 //todo: get rid of the ~10 pixels of right overscan (alignment issues :/)
 
 extern __not_in_flash("x") uint16_t tokTextLineBegin[] = {
     COMPOSABLE_COLOR_RUN, 0, HCAL_DEFAULT /* hcal */,  // At least 3 pixels of black

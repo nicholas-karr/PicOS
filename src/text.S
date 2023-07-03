@@ -36,7 +36,7 @@ testfunc:
 // void render_relevant_text_boxes(uint32_t* buf, uint32_t* font, TextLineEntry* entries)
 render_relevant_text_boxes:
     // r0: buf, r1: ptr to font, r2: entries
-    push {r4, r5, r6, r7, lr}
+    push {r4, r5, r6, r7} // This is a leaf function, don't touch lr
 
     movs r3, #240 // Font scalar
 
@@ -73,7 +73,6 @@ render_relevant_text_boxes:
           str r7, [r0] // store at buf[x]
 
           mov r7, r6
-          //movs r7, #65
           lsrs r6, #8
           uxtb r7, r7
           muls r7, r3, r7
@@ -102,11 +101,11 @@ render_relevant_text_boxes:
 
         loop_transparent:
           str r6, [r0]
-          str r6, [r0, #4]
-          str r6, [r0, #8]
-          str r6, [r0, #12]
+          //str r6, [r0, #4]
+          //str r6, [r0, #8]
+          //str r6, [r0, #12]
 
-          adds r0, #16
+          adds r0, #4
           cmp r0, r4
           bne loop_transparent
 
@@ -114,4 +113,5 @@ render_relevant_text_boxes:
 
 
     end:
-    pop  {r4, r5, r6, r7, pc}
+    pop  {r4, r5, r6, r7}
+    bx lr

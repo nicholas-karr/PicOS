@@ -4,6 +4,23 @@ set(PICO_SDK_PATH ../../pico-sdk)
 set(PICO_EXTRAS_PATH ../../pico-extras)
 set(PICO_PLAYGROUND_PATH ../../pico-playground)
 
+
+
+
+#Wireless stuff
+
+set(PICO_BOARD pico_w)
+file(READ wifi_ssid.txt WIFI_SSID)
+file(READ wifi_password.txt WIFI_PASSWORD)
+
+set(BTSTACK_ROOT ${PICO_SDK_PATH}/lib/btstack)
+set(BTSTACK_EXAMPLE_PATH ${BTSTACK_ROOT}/example)
+set(BTSTACK_3RD_PARTY_PATH ${BTSTACK_ROOT}/3rd-party)
+set(BT_EXAMPLE_COMMON_DIR "${CMAKE_CURRENT_LIST_DIR}")
+
+
+
+
 # Pull in PICO SDK (must be before project)
 include(pico_sdk_import.cmake)
 
@@ -29,7 +46,8 @@ target_compile_definitions(picos PRIVATE
         PICO_SCANVIDEO_SCANLINE_BUFFER_COUNT=4
         PICO_SCANVIDEO_PLANE1_FIXED_FRAGMENT_DMA=true
         PICO_SCANVIDEO_MAX_SCANLINE_BUFFER_WORDS=360
-        #PICO_SCANVIDEO_48MHZ
+        
+        PICO_SCANVIDEO_PLANE2_FIXED_FRAGMENT_DMA=true
 )
 
 pico_add_extra_outputs(picos)
@@ -46,6 +64,12 @@ target_link_libraries(picos PRIVATE
         pico_multicore
         pico_stdlib
         pico_scanvideo_dpi
-        render)
+        render
+
+        pico_btstack_classic 
+        pico_btstack_ble
+        pico_btstack_cyw43
+        pico_cyw43_arch_none
+        )
 
 include_directories(picos ../pico-playground/scanvideo/render include)

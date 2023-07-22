@@ -1,3 +1,6 @@
+#ifndef PICOS_SCREEN_H
+#define PICOS_SCREEN_H
+
 #include "pico/scanvideo.h"
 
 class Screen {
@@ -20,3 +23,12 @@ public:
 };
 
 static Screen screen;
+
+struct Window {
+    uint16_t x, x_max;
+    uint16_t y, y_max;
+
+    
+};
+
+#endif

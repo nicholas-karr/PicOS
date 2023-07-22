@@ -145,7 +145,7 @@ struct TextBox {
         return str;
     }
 
-    void init(uint16_t x_, uint16_t x_max_, uint16_t y_, uint16_t y_max_, char* text_, bool editable_) {
+    void init(uint16_t x_, uint16_t x_max_, uint16_t y_, uint16_t y_max_, const char* text_, bool editable_) {
         x = x_;
         x_max = x_max_;
         y = y_;
@@ -200,7 +200,7 @@ volatile char* ret;
 static const char stocktext[] = "LOREM IPSUM DOLOR SIT AMET CONSECTETUR ADIPISCING ELIT MORBI SED LACUS DIAM UT VITAE NISL MASSA. DONEC PRETIUM NULLA METUS VEL PRETIUM DOLOR VOLUTPAT AC. IN A LIBERO EGET LOREM BIBENDUM PORTA NEC EU EX. SUSPENDISSE LOBORTIS, SEM EGET FACILISIS VARIUS, VELIT MAGNA DAPIBUS RISUS, EGET ALIQUET LIGULA MI AT MASSA. FUSCE UT LACINIA TURPIS. DONEC TORTOR AUGUE, ULTRICIES AC ANTE A, MOLESTIE PORTTITOR PURUS. IN VEL INTERDUM ORCI. IN EGET EROS SCELERISQUE, CONSEQUAT LEO VEL, ALIQUET NULLA. AENEAN QUIS FINIBUS LOREM.";
 
 // Fill layer 0 with text
-void __time_critical_func(renderTextBoxes) (scanvideo_scanline_buffer* dest, uint16_t y) {
+void __time_critical_func(renderTextBoxes) (uint16_t y, uint32_t*& data, uint16_t& dataUsed) {
     constexpr uint16_t expectedWidth = 160; //160 //(1280 / (8 * 2));
     
     TextBox* relevant[textBoxesCount];
@@ -221,7 +221,7 @@ void __time_critical_func(renderTextBoxes) (scanvideo_scanline_buffer* dest, uin
     std::sort(relevant, relevant + relevantCount, [](TextBox* lhs, TextBox* rhs) { return lhs->x < rhs->x_max; });
 
     // Pointer to an array of pointers to tokens/colors
-    uint32_t* buf = dest->data;
+    uint32_t* buf = data;
 
     *buf++ = ((uintptr_t)(tokTextLineBegin));
 
@@ -267,10 +267,8 @@ void __time_critical_func(renderTextBoxes) (scanvideo_scanline_buffer* dest, uin
     *buf++ = ((uintptr_t)(tokTextLineEnd));
     *buf++ = 0;
 
-    dest->data_used = buf - dest->data;
+    dataUsed = buf - data;
 
     // Set size of each token array
-    dest->fragment_words = FRAGMENT_WORDS;
-
-    dest->status = SCANLINE_OK;
+    //dest->fragment_words = FRAGMENT_WORDS;
 }

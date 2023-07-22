@@ -1,0 +1,25 @@
+<style>
+    #trackpad {
+        justify-self: center;
+    }
+</style>
+
+<body>
+
+<canvas id="trackpad" width="1280" height="720" style="border:1px solid grey" onmousemove="mouseMove(event)" onmouseout="mouseLeave()"></canvas>
+
+<br>
+
+<button onclick="main()">Open</button>
+<button onclick="main()">Close</button>
+<input onsubmit="sendText(event)">
+
+<div id="info"></div>
+<br>
+<div id="log"></div>
+
+
+<script src="remote.js"></script>
+
+</body>
+

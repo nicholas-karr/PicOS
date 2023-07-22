@@ -1,4 +1,5 @@
 #include <atomic>
+#include <optional>
 
 #include <stdint.h>
 #include <string.h>
@@ -22,6 +23,7 @@
 
 #include "button.h"
 #include "textbox.h"
+#include "input.h"
 
 #define FRAGMENT_WORDS 4
 
@@ -45,13 +47,33 @@ void __time_critical_func(core1_vga_main)() {
             uint16_t y = scanvideo_scanline_number(scanline_buffer->scanline_id);
             frameNum = scanvideo_frame_number(scanline_buffer->scanline_id);
 
-            //textBoxes[0].y = frameNum;
-            //textBoxes[0].y_max = frameNum + 100;
+            scanline_buffer->fragment_words = FRAGMENT_WORDS;
+            renderTextBoxes(y, scanline_buffer->data, scanline_buffer->data_used);
 
+            //uint32_t* buf = scanline_buffer->data;
+            //*buf++ = ((uintptr_t)(instantTerminateLine));
+            //*buf++ = 4;
+            //*buf++ = ((uintptr_t)(tokTextLineEnd));
+            //*buf++ = 4;
+            //scanline_buffer->data_used = buf - scanline_buffer->data;
+
+            //uint32_t* buf2 = scanline_buffer->data2;
+            //*buf2++ = ((uintptr_t)(instantTerminateLine2));
+            //*buf2++ = ((uintptr_t)(tokTextLineEnd));
+            //*buf2++ = 0;
+            //scanline_buffer->data2_used = buf2 - scanline_buffer->data2;
+
+            //std::swap(scanline_buffer->data, scanline_buffer->data2);
+            //std::swap(scanline_buffer->data_used, scanline_buffer->data2_used);
             
 
-            renderTextBoxes(scanline_buffer, y);
+            //instantTerminateLine[4] = 1;
 
+
+            //scanline_buffer->data = scanline_buffer->data2;
+            //scanline_buffer->data_used = scanline_buffer->data2_used;
+
+            scanline_buffer->status = SCANLINE_OK;
             scanvideo_end_scanline_generation(scanline_buffer);
         }
     }
@@ -65,6 +87,8 @@ int __time_critical_func(core0_vga_main)() {
     //set_sys_clock_khz(120000, true); // vga_mode_1280x1024_40
     //setup_default_uart();
     stdio_init_all();
+
+    
 
     screen.init(vga_mode);
 
@@ -100,19 +124,21 @@ int __time_critical_func(core0_vga_main)() {
             //}
 
 
-            double ms = double(time_us_64()) / 1'000'000'000.0;
-            //spinbox1.x = (cos(ms) + 1) * 200;
-            //spinbox1.y = (sin(ms) + 1) * 300;
-            //spinbox2.x = (cos(ms + M_PI_2) + 1) * 200;
-            //spinbox2.y = (sin(ms + M_PI_2) + 1) * 300;
+            serial.run();
 
-            spinbox1.x = 250.0 + 150.0 * cosf(float(frameNum) / 50.0);
+            spinbox1.x = ROUND_UP(inputState.mouse_x, 4);
+            spinbox1.x_max = spinbox1.x + 80;
+
+            spinbox1.y = ROUND_UP(inputState.mouse_y, 4);
+            spinbox1.y_max = spinbox1.y + 80;
+
+            /*spinbox1.x = 250.0 + 150.0 * cosf(float(frameNum) / 50.0);
             spinbox1.x = ROUND_UP(spinbox1.x, 4);
             spinbox1.x_max = spinbox1.x + 80;
 
             spinbox1.y = 250.0 + 150.0 * sinf(float(frameNum) / 50.0);
             spinbox1.y = ROUND_UP(spinbox1.y, 4);
-            spinbox1.y_max = spinbox1.y + 160;
+            spinbox1.y_max = spinbox1.y + 160;*/
 
             spinbox2.x = 250.0 + 150.0 * cosf(float(frameNum) / 50.0 + M_PI);
             spinbox2.x = ROUND_UP(spinbox2.x, 4);
@@ -140,7 +166,7 @@ int __time_critical_func(core0_vga_main)() {
 
 
 int main() {
-    auto i = sizeof(TextLineEntry);
+    serial.init();
 
     core0_vga_main();
 }

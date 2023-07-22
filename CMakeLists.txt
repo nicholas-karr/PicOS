@@ -26,7 +26,7 @@ include(pico_sdk_import.cmake)
 
 # We also need PICO EXTRAS
 include(pico_extras_import.cmake)
-include(pico_playground_import.cmake)
+#include(pico_playground_import.cmake)
 
 project(picos C CXX ASM)
 set(CMAKE_C_STANDARD 11)
@@ -44,10 +44,19 @@ add_executable(picos
 
 target_compile_definitions(picos PRIVATE
         PICO_SCANVIDEO_SCANLINE_BUFFER_COUNT=4
-        PICO_SCANVIDEO_PLANE1_FIXED_FRAGMENT_DMA=true
         PICO_SCANVIDEO_MAX_SCANLINE_BUFFER_WORDS=360
         
+        PICO_SCANVIDEO_PLANE_COUNT=1
+
+        PICO_SCANVIDEO_MAX_SCANLINE_BUFFER1_WORDS=360
+        PICO_SCANVIDEO_PLANE1_FRAGMENT_DMA=true
+        #PICO_SCANVIDEO_PLANE1_FIXED_FRAGMENT_DMA=true
+        PICO_SCANVIDEO_PLANE1_VARIABLE_FRAGMENT_DMA=true
+
+        PICO_SCANVIDEO_MAX_SCANLINE_BUFFER2_WORDS=60
+        PICO_SCANVIDEO_PLANE2_FRAGMENT_DMA=true
         PICO_SCANVIDEO_PLANE2_FIXED_FRAGMENT_DMA=true
+        #PICO_SCANVIDEO_PLANE2_VARIABLE_FRAGMENT_DMA=true
 )
 
 pico_add_extra_outputs(picos)
@@ -64,7 +73,6 @@ target_link_libraries(picos PRIVATE
         pico_multicore
         pico_stdlib
         pico_scanvideo_dpi
-        render
 
         pico_btstack_classic 
         pico_btstack_ble

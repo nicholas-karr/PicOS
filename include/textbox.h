@@ -305,7 +305,7 @@ void __time_critical_func(renderTextBoxes) (uint16_t y, Layer text) {
     for (uint16_t i = 0; i < relevantCount && entriesCnt < 8; ++i) {
         const TextBox& box = *relevant[i];
 
-        if (box.x >= screen.x_end) { 
+        if (box.x >= screen.x_end || xitr >= box.x_max) { 
             continue; 
         } // should be setting 'visible' flag too
         
@@ -326,7 +326,19 @@ void __time_critical_func(renderTextBoxes) (uint16_t y, Layer text) {
             size_t length = line->alignedSize();
             uint16_t localY = y - relevant[i]->y;
             char* data = line->data();
-            entries[entriesCnt++] = { line->data(), bufItr += length, font_raw_pixels + FONT_WIDTH_WORDS * (localY % FONT_HEIGHT) }; // todo: replace aligned size with unaligned and use geq in asm
+
+            if (xitr > box.x) { // Try to remove some characters if another text box is over this one
+                length -= (xitr - box.x) / 4;
+                length = ROUND_UP(length, 4);
+                size_t offset = ((xitr - box.x) / 4);
+                offset = ROUND_UP(offset, 4);
+                if (offset >= line->size()) {
+                    continue;
+                }
+                data += offset;
+            }
+
+            entries[entriesCnt++] = { data, bufItr += length, font_raw_pixels + FONT_WIDTH_WORDS * (localY % FONT_HEIGHT) }; // todo: replace aligned size with unaligned and use geq in asm
             xitr += length * 4;
         }
 
@@ -341,12 +353,14 @@ void __time_critical_func(renderTextBoxes) (uint16_t y, Layer text) {
     }
 
     /*if (bufItr <= buf + 160)*/ 
-    entries[entriesCnt++] = { (char*)nullptr, buf + 160, nullptr }; // Fill in the rest of the line with transparent pixels
+    //entries[entriesCnt++] = { (char*)nullptr, buf + 160, nullptr }; // Fill in the rest of the line with transparent pixels
     entries[entriesCnt++] = { (char*)nullptr, nullptr, nullptr }; // End of line meta token
 
     uint32_t* font = font_raw_pixels; // + FONT_WIDTH_WORDS * (y % FONT_HEIGHT);
+    std::fill_n(bufItr, buf + 160 - bufItr, uintptr_t(tokTransparents));
 
     render_relevant_text_boxes(buf, font, entries);
+    
     buf += 160;
 
     *buf++ = ((uintptr_t)(tokTextLineEnd));

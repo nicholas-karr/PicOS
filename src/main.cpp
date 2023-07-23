@@ -108,7 +108,7 @@ int __time_critical_func(core0_vga_main)() {
     //setup_default_uart();
     stdio_init_all();
 
-    
+
 
     screen.init(vga_mode);
 
@@ -122,7 +122,7 @@ int __time_critical_func(core0_vga_main)() {
     TextBox& spinbox2 = textBoxes[1];
     textBoxesCount = 2;
 
-    spinbox1.init(100, 200, 0, 200, "Contents of \x7Fthe\nNEWLINE\n", true);
+    spinbox1.init(100, 200, 350, 400, "Contents of \x7Fthe\nNEWLINE\n", true);
     //spinbox2.init(300, 400, 100, 300, "CONTENTS OF THE SECOND\nNEWLINE\n\nHELLO", false);
     spinbox2.init(300, 400, 300, 400, "!\"#$%&'()\ntest\n\n", false);
     //spinbox2.init(300, 400, 100, 300, "!\"#$%&'()", false);
@@ -150,11 +150,11 @@ int __time_critical_func(core0_vga_main)() {
 
             serial.run();
 
-            /*spinbox1.x = ROUND_UP(inputState.mouse_x, 4);
+            spinbox1.x = ROUND_UP(inputState.mouse_x, 4);
             spinbox1.x_max = spinbox1.x + 80;
 
             spinbox1.y = ROUND_UP(inputState.mouse_y, 4);
-            spinbox1.y_max = spinbox1.y + 80;*/
+            spinbox1.y_max = spinbox1.y + 80;
 
             /*spinbox1.x = 250.0 + 150.0 * cosf(float(frameNum) / 50.0);
             spinbox1.x = ROUND_UP(spinbox1.x, 4);

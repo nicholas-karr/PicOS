@@ -1,6 +1,10 @@
+#ifndef PICOS_INPUT_H
+#define PICOS_INPUT_H
+
 #include <cstdio>
 
 #include "screen.h"
+#include "cursor.h"
 
 struct InputState {
     uint16_t mouse_x, mouse_y;
@@ -119,10 +123,10 @@ class SerialLink {
     }
 
     void run() {
-        #define ASSERT(cond) { if (!cond) { reset(); return; } }
+        #define ASSERT(cond) { if (!(cond)) { reset(); return; } }
         #define EXPECT_LENGTH(len) { if (!expectLength(len)) { return; } }
         #define EXPECT_BYTES(arr, len) { if (!expectLength(len)) { return; } else { memcpy(arr + 6, buf, len); } }
-        #define READ_BASE10(var, len) uint16_t var;                                 \
+        #define READ_BASE10(var, len) uint16_t var = 0;                             \
          if (!expectLength(len)) { return; } else {                                 \
             for (uint16_t i = 0; i < len; ++i) {                                    \
                 var *= 10;                                                          \
@@ -170,6 +174,8 @@ class SerialLink {
             x %= screen.x_end;
             y %= screen.y_end;
 
+            mouse.move(x, y);
+
             inputState.mouse_x = x;
             inputState.mouse_y = y;
         }
@@ -193,3 +199,5 @@ class SerialLink {
 };
 
 SerialLink serial;
+
+#endif

@@ -1,3 +1,6 @@
+#ifndef PICOS_TEXTBOX_H
+#define PICOS_TEXTBOX_H
+
 #include <vector>
 #include <string>
 #include <bit>
@@ -11,23 +14,33 @@
 
 #define STR_ALIGNED(S) ( (_Alignas(4) char []){ S } )
 
-#define ROUND_UP(num, multiple) ((num + multiple - 1) & -multiple)
+#define ROUND_UP(num, multiple) (((num + multiple - 1) / multiple) * multiple)
 #define ROUND_DOWN(num, multiple) (num >= 0 ? (num / multiple) * multiple : ((num - multiple + 1) / multiple) * multiple)
 
 
-struct __attribute__((__packed__)) alignas(4) TextLine {
+//  __attribute__((__packed__)) alignas(4)
+struct TextLine {
     size_t stringSize_ = 0;
     char* data_ = internalBuf_;
 
     size_t allocLen_ = sizeof(internalBuf_);
     
-    char internalBuf_[16];
+    char internalBuf_[16] = { };
 
-    TextLine() { stringSize_ = 0; }
+    TextLine() { 
+        
+    }
     TextLine(size_t allocationHint) {
-        stringSize_ = 0;
-        allocLen_ = ROUND_UP(allocationHint, 4);
-        data_ = (char*)calloc(allocLen_, 1);
+        assert(false);
+
+        if (allocationHint <= sizeof(internalBuf_)) {
+
+        }
+        else {
+            allocLen_ = ROUND_UP(allocationHint, 4);
+            data_ = (char*)aligned_alloc(4, allocLen_);
+            memset(data_, 0, allocLen_);
+        }
     }
 
     size_t size() {
@@ -38,36 +51,56 @@ struct __attribute__((__packed__)) alignas(4) TextLine {
         if (allocLen_ >= cnt) { return; }
 
         cnt = std::bit_ceil(cnt);
+        allocLen_ = ROUND_UP(cnt, 4);
 
         if (data_ == internalBuf_) {
-            data_ = (char*)calloc(ROUND_UP(cnt, 4), 1);
+            //allocLen_ = ROUND_UP(cnt, 4);
+            data_ = (char*)aligned_alloc(4, allocLen_);
+            memset(data_, 0, allocLen_);
             memcpy(data_, internalBuf_, stringSize_);
-            allocLen_ = ROUND_UP(cnt, 4);
         }
         else {
-            char* tmp = (char*)calloc(ROUND_UP(cnt, 4), 1);
+            //allocLen_ = ROUND_UP(cnt, 4);
+            char* tmp = (char*)aligned_alloc(4, allocLen_);
+            memset(tmp, 0, allocLen_);
             memcpy(tmp, data_, stringSize_);
             free(data_);
             data_ = tmp;
-            allocLen_ = ROUND_UP(cnt, 4);
+        }
+
+        //padEnd();
+    }
+
+    void padEnd() {
+        switch (allocLen_ % 4) {
+            case 3: data_[allocLen_ - 1] = 0; //'\x7F' - 0x20;
+            case 2: data_[allocLen_ - 2] = 0; //'\x7F' - 0x20;
+            case 1: data_[allocLen_ - 3] = 0; //'\x7F' - 0x20;
+            // case 0: Aligned already
         }
     }
 
     void push_back(char c) {
         reserve(stringSize_ + 1);
-        data_[stringSize_++] = c;
+        stringSize_++;
+        data_[stringSize_ - 1] = c;
+
+        
     }
 
     char* data() {
         return data_;
     }
 
+    // How many characters this line will produce, including transparent trailers
     size_t alignedSize() {
-        size_t p1 = this->stringSize_ + 4;
-        size_t p3 = this->stringSize_ + 1;
-        size_t p2 = this->stringSize_ % 4;
-        //printf("%d\r\n", p1 + p2);
         return ROUND_UP(stringSize_, 4);
+    }
+
+    ~TextLine() {
+        if (data_ != internalBuf_) {
+            free(data_);
+        }
     }
 };
 
@@ -87,10 +120,10 @@ struct TextLinePreamble {
     }
 };
 
-struct __attribute__((__packed__)) TextLineEntry {
+struct __attribute__((__packed__)) alignas(4) TextLineEntry {
     const char* buf;
     const uint32_t* c_end;
-    uint32_t* y;
+    uint32_t* font;
 };
 
 struct TextBox {
@@ -119,8 +152,11 @@ struct TextBox {
             if (i == '\n') {
                 lines.emplace_back();
             }
+            else if (i < 0x20 || i == 0) {
+                assert(false);
+            }
             else {
-                lines.back().push_back(i);
+                lines.back().push_back(i - 0x20); //
             }
         }
     }
@@ -146,10 +182,10 @@ struct TextBox {
     }
 
     void init(uint16_t x_, uint16_t x_max_, uint16_t y_, uint16_t y_max_, const char* text_, bool editable_) {
-        x = x_;
-        x_max = x_max_;
-        y = y_;
-        y_max = y_max_;
+        x = ROUND_UP(x_, 4);
+        x_max = ROUND_UP(x_max_, 4);
+        y = ROUND_UP(y_, 4);
+        y_max = ROUND_UP(y_max_, 4);
         editable = editable_;
 
         if (editable_) {
@@ -169,8 +205,11 @@ struct TextBox {
     }
 
     TextLine* lineAt(int y) {
-        auto index = topOfWindow;// + ROUND_DOWN(y, FONT_HEIGHT);
-        if (index < 0 || index >= lines.size()) {
+        y -= this->y;
+        //auto index = topOfWindow + ROUND_DOWN(y, FONT_HEIGHT);
+        //int index = topOfWindow + (y - (y % FONT_HEIGHT)) / FONT_HEIGHT;
+        int index = y / FONT_HEIGHT;
+        if (index < 0 || index >= lines.size() || lines.at(index).stringSize_ == 0) {
             return nullptr;
         }
         return &lines[index];
@@ -182,6 +221,7 @@ static int textBoxesCount = 0;
 
 static RingBuffer<TextLinePreamble, 32> preambles;
 
+// PUT THIS INSIDE THE SCANLINE BUF
 uint32_t* getPreamble(int length) {
     TextLinePreamble* i = preambles.alloc();
     i->setFollowingSize(length);
@@ -199,29 +239,59 @@ volatile char* ret;
 //static const char stocktext[] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. \nMorbi sed lacus diam. Ut vitae nisl massa. Donec pretium nulla metus, vel pretium dolor volutpat ac. In a libero eget lorem bibendum porta nec eu ex. Suspendisse lo\nbortis, sem eget facilisis varius, velit magna dapibus risus, eget aliquet ligula mi at massa. Fusce ut lacinia turpis. Donec tortor augue, ultricies ac ante a, molestie porttitor purus. In vel interd\num orci. In eget eros scelerisque, consequat leo vel, aliquet nulla. Aenean quis finibus lorem.";
 static const char stocktext[] = "LOREM IPSUM DOLOR SIT AMET CONSECTETUR ADIPISCING ELIT MORBI SED LACUS DIAM UT VITAE NISL MASSA. DONEC PRETIUM NULLA METUS VEL PRETIUM DOLOR VOLUTPAT AC. IN A LIBERO EGET LOREM BIBENDUM PORTA NEC EU EX. SUSPENDISSE LOBORTIS, SEM EGET FACILISIS VARIUS, VELIT MAGNA DAPIBUS RISUS, EGET ALIQUET LIGULA MI AT MASSA. FUSCE UT LACINIA TURPIS. DONEC TORTOR AUGUE, ULTRICIES AC ANTE A, MOLESTIE PORTTITOR PURUS. IN VEL INTERDUM ORCI. IN EGET EROS SCELERISQUE, CONSEQUAT LEO VEL, ALIQUET NULLA. AENEAN QUIS FINIBUS LOREM.";
 
+#define CHARACTERS_IN_SCREEN (1280 / 4)
+
+// Ends with 0-3 transparent characters for the end of the window
+// 4 end-to-start arrays
+static char padEnd[4 * CHARACTERS_IN_SCREEN];
+
+void loadPadEnd() {
+    memset(padEnd, 0, CHARACTERS_IN_SCREEN);
+    memset(padEnd + CHARACTERS_IN_SCREEN, 0, CHARACTERS_IN_SCREEN);
+    memset(padEnd + CHARACTERS_IN_SCREEN * 2, 0, CHARACTERS_IN_SCREEN);
+    memset(padEnd + CHARACTERS_IN_SCREEN * 3, 0, CHARACTERS_IN_SCREEN);
+
+    memset(padEnd + CHARACTERS_IN_SCREEN * 2 - 4, '\x7F' - 0x20, 3);
+    memset(padEnd + CHARACTERS_IN_SCREEN * 3 - 3, '\x7F' - 0x20, 2);
+    memset(padEnd + CHARACTERS_IN_SCREEN * 4 - 2, '\x7F' - 0x20, 1);
+}
+
+struct Layer {
+    uint32_t*& data;
+    uint16_t& data_used;
+};
+
+
 // Fill layer 0 with text
-void __time_critical_func(renderTextBoxes) (uint16_t y, uint32_t*& data, uint16_t& dataUsed) {
-    constexpr uint16_t expectedWidth = 160; //160 //(1280 / (8 * 2));
+void __time_critical_func(renderTextBoxes) (uint16_t y, Layer text) {
+    //constexpr uint16_t expectedWidth = 160; //160 //(1280 / (8 * 2));
     
     TextBox* relevant[textBoxesCount];
-    TextBox** lastRelevant = relevant + 1;
     uint16_t relevantCount = 0;
 
     // Store which text boxes are on this scanline (probably has to happen every frame?)
-    for (uint16_t i = 0; i < textBoxesCount; ++i) {
+    for (uint32_t i = 0; i < textBoxesCount; ++i) {
         TextBox& test = textBoxes[i];
         if (y >= test.y && y <= test.y_max) {
             relevant[relevantCount++] = &test;
         }
     }
 
+    if (relevantCount == 0) {
+        uint32_t* buf = text.data;
+        
+        *buf++ = ((uintptr_t)(tokTextLineBegin));
+        text.data_used = (buf - text.data) / 2;
+        //return;
+    }
+
     //relevant[relevantCount] = &(textBoxes[0]);
 
     // sort by x_min
-    std::sort(relevant, relevant + relevantCount, [](TextBox* lhs, TextBox* rhs) { return lhs->x < rhs->x_max; });
+    std::sort(relevant, relevant + relevantCount, [](TextBox* lhs, TextBox* rhs) { return lhs->x < rhs->x; });
 
     // Pointer to an array of pointers to tokens/colors
-    uint32_t* buf = data;
+    uint32_t* buf = text.data;
 
     *buf++ = ((uintptr_t)(tokTextLineBegin));
 
@@ -235,29 +305,44 @@ void __time_critical_func(renderTextBoxes) (uint16_t y, uint32_t*& data, uint16_
     for (uint16_t i = 0; i < relevantCount && entriesCnt < 8; ++i) {
         const TextBox& box = *relevant[i];
 
-        uint16_t cappedX = std::min(box.x, screen.x_end);
-
-        if (box.x > screen.x_end) { 
-            //continue; 
-            } // should be setting 'visible' flag too
+        if (box.x >= screen.x_end) { 
+            continue; 
+        } // should be setting 'visible' flag too
         
-        if (xitr < cappedX) {
-            // Pre-padding
-            entries[entriesCnt++] = { (char*)nullptr, bufItr += ((cappedX - xitr) / 4) }; // 4 pixels per 32-bit ptr
-            xitr = cappedX;
+        if (xitr < box.x) {
+            // Pre-padding, one character at a time
+            size_t length = (box.x - xitr) / 4;
+            entries[entriesCnt++] = { (char*)nullptr, bufItr += length, nullptr }; // 4 pixels per 32-bit ptr
+            xitr += length * 4;
+
+            if (xitr != box.x) {
+                assert(false);
+                __breakpoint();
+            }
         }
 
-        auto line = relevant[i]->lineAt(0);      //(y);
+        auto line = relevant[i]->lineAt(y);      //(y);
         if (line) {
             size_t length = line->alignedSize();
             uint16_t localY = y - relevant[i]->y;
+            char* data = line->data();
             entries[entriesCnt++] = { line->data(), bufItr += length, font_raw_pixels + FONT_WIDTH_WORDS * (localY % FONT_HEIGHT) }; // todo: replace aligned size with unaligned and use geq in asm
-            xitr += length * 4; //length * FONT_WIDTH_WORDS;
+            xitr += length * 4;
+        }
+
+        uint16_t lastX = std::min(box.x_max, screen.x_end);
+        if (xitr + 4 < lastX ) {
+            size_t length = lastX - xitr;
+            length /= 4;
+            length = ROUND_UP(length, 4);
+            entries[entriesCnt++] = { padEnd, bufItr += length, font_raw_pixels };
+            xitr += length * 4;
         }
     }
 
-    /*if (bufItr <= buf + 160)*/ { entries[entriesCnt++] = { (char*)nullptr, buf + 160 }; } // Fill in the rest of the line with transparent pixels
-    entries[entriesCnt++] = { (char*)nullptr, nullptr }; // End of line meta token
+    /*if (bufItr <= buf + 160)*/ 
+    entries[entriesCnt++] = { (char*)nullptr, buf + 160, nullptr }; // Fill in the rest of the line with transparent pixels
+    entries[entriesCnt++] = { (char*)nullptr, nullptr, nullptr }; // End of line meta token
 
     uint32_t* font = font_raw_pixels; // + FONT_WIDTH_WORDS * (y % FONT_HEIGHT);
 
@@ -267,8 +352,10 @@ void __time_critical_func(renderTextBoxes) (uint16_t y, uint32_t*& data, uint16_
     *buf++ = ((uintptr_t)(tokTextLineEnd));
     *buf++ = 0;
 
-    dataUsed = buf - data;
+    text.data_used = (buf - text.data) / 2;
 
     // Set size of each token array
     //dest->fragment_words = FRAGMENT_WORDS;
 }
+
+#endif

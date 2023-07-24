@@ -51,7 +51,7 @@ extern __not_in_flash("z") uint16_t tokBackground[] = {
 
 extern __not_in_flash("z") uint16_t tokNone[] = {
     COMPOSABLE_COLOR_RUN, 0, HCAL_DEFAULT /* hcal */,
-    COMPOSABLE_COLOR_RUN, 0, 1280,
+    COMPOSABLE_COLOR_RUN, 0xFFFF, 1280,
     COMPOSABLE_RAW_1P, 0
 };
 
@@ -62,10 +62,40 @@ void __time_critical_func(drawBackground) (uint16_t y, Layer background) {
     background.data_used = (buf - background.data) / 2;
 }
 
+uint16_t pointerIcon[] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0xffff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xffff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0x0, 0x0, 0xffff, 0x0, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0x0, 0x0, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0x0, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0x0, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0xffff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+
+void __time_critical_func(drawIcons2) (uint16_t y, Layer layer) {
+    uint32_t* buf = layer.data;
+    //*buf++ = ((uintptr_t)(tokNone));
+    //*buf++ = ((uintptr_t)(tokTextLineEnd));
+    //memcpy(buf, tokNone, sizeof(tokNone)); buf += 4;
+
+    *buf++ = COMPOSABLE_COLOR_RUN << 16 | 0;
+    *buf++ = HCAL_DEFAULT << 16 | COMPOSABLE_COLOR_RUN;
+
+    if (y >= mouse.y_ && y <= mouse.y_ + 15) {
+        auto row = pointerIcon + 9 * (y - mouse.y_);
+        *buf++ = 0 << 16 | mouse.x_;
+        *buf++ = COMPOSABLE_RAW_RUN << 16 | row[0];
+        *buf++ = (9 - 3) << 16 | row[1];
+        memcpy(buf, row + 2 * 2, 6 * 2); buf += 3;
+        *buf++ = row[8] << 16 | COMPOSABLE_COLOR_RUN;
+        *buf++ = 0 << 16 | (1280 - mouse.x_ - 9);
+    }
+    else {
+        // Cover whole screen
+        *buf++ = 0 << 16 | 1280;
+    }
+
+    memcpy(buf, tokTextLineEnd, sizeof(tokTextLineEnd)); buf += 4;
+
+    layer.data_used = (buf - layer.data) / 2;
+}
+
 void __time_critical_func(drawIcons) (uint16_t y, Layer layer) {
     uint32_t* buf = layer.data;
-    *buf++ = ((uintptr_t)(tokNone));
-    *buf++ = ((uintptr_t)(tokTextLineEnd));
+    //memcpy(buf, tokNone, sizeof(tokNone)); buf += 4;
+    memcpy(buf, tokTextLineEnd, sizeof(tokTextLineEnd)); buf += 4;
     layer.data_used = (buf - layer.data) / 2;
 }
 
@@ -83,14 +113,14 @@ void __time_critical_func(core1_vga_main)() {
             uint16_t y = scanvideo_scanline_number(scanline_buffer->scanline_id);
             frameNum = scanvideo_frame_number(scanline_buffer->scanline_id);
 
-            scanline_buffer->fragment_words = FRAGMENT_WORDS;
+            //scanline_buffer->fragment_words = FRAGMENT_WORDS;
             drawBackground(y, {scanline_buffer->data, scanline_buffer->data_used});
 
-            scanline_buffer->fragment_words2 = FRAGMENT_WORDS;
-            renderTextBoxes(y, {scanline_buffer->data2, scanline_buffer->data2_used});
+            //scanline_buffer->fragment_words2 = FRAGMENT_WORDS;
+            renderTextBoxes(y, {scanline_buffer->data3, scanline_buffer->data3_used});
 
-            //scanline_buffer->fragment_words3 = FRAGMENT_WORDS;
-            //drawIcons(y, {scanline_buffer->data3, scanline_buffer->data3_used});
+            scanline_buffer->fragment_words3 = FRAGMENT_WORDS;
+            drawIcons(y, {scanline_buffer->data2, scanline_buffer->data2_used});
 
 
             scanline_buffer->status = SCANLINE_OK;
@@ -150,11 +180,11 @@ int __time_critical_func(core0_vga_main)() {
 
             serial.run();
 
-            spinbox1.x = ROUND_UP(inputState.mouse_x, 4);
-            spinbox1.x_max = spinbox1.x + 80;
+            //spinbox1.x = ROUND_UP(inputState.mouse_x, 4);
+            //spinbox1.x_max = spinbox1.x + 80;
 
-            spinbox1.y = ROUND_UP(inputState.mouse_y, 4);
-            spinbox1.y_max = spinbox1.y + 80;
+            //spinbox1.y = ROUND_UP(inputState.mouse_y, 4);
+            //spinbox1.y_max = spinbox1.y + 80;
 
             /*spinbox1.x = 250.0 + 150.0 * cosf(float(frameNum) / 50.0);
             spinbox1.x = ROUND_UP(spinbox1.x, 4);

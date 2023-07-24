@@ -36,6 +36,8 @@ class Cursor {
         x_ = x;
         y_ = y;
 
+        return;
+
         for (uint16_t i = 0; i < textBoxesCount; ++i) {
             TextBox& test = textBoxes[i];
             if (y_ >= test.y && y_ <= test.y_max && x_ >= test.x && x_ <= test.x_max) {

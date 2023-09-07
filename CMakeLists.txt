@@ -36,6 +36,7 @@ pico_sdk_init()
 
 add_executable(picos
         src/text.S
+        src/mem.S
         src/main.cpp
         src/font8.c
         src/font6.c
@@ -64,6 +65,8 @@ target_compile_definitions(picos PRIVATE
 )
 
 #target_compile_options(picos PRIVATE -Wall -Wextra -Wpedantic -Wno-unused-parameter -Wno-vla -Wno-sign-compare)
+
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frtti")
 
 pico_add_extra_outputs(picos)
 

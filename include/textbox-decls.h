@@ -6,13 +6,13 @@
 
 #define HCAL_DEFAULT 54 //todo: get rid of the ~10 pixels of right overscan (alignment issues :/)
 
-extern __not_in_flash("x") uint16_t tokTextLineBegin[] = {
+__not_in_flash("x") uint16_t tokTextLineBegin[] = {
     COMPOSABLE_COLOR_RUN, 0, HCAL_DEFAULT /* hcal */,  // At least 3 pixels of black
     COMPOSABLE_RAW_RUN, 0,
     1280 /* run length - 3 */, 0, 0 // It's 1280 because math sorry
 };
 
-extern __not_in_flash("y") uint16_t tokTextLineEnd[] = {
+__not_in_flash("y") uint16_t tokTextLineEnd[] = {
 #if FRAGMENT_WORDS == 5 || FRAGMENT_WORDS == 3
         COMPOSABLE_RAW_1P, 0,
 #endif
@@ -27,14 +27,14 @@ extern __not_in_flash("y") uint16_t tokTextLineEnd[] = {
         COMPOSABLE_EOL_SKIP_ALIGN, 0xffff
 };
 
-extern __not_in_flash("y") uint16_t tokSkipLine[] = {
+__not_in_flash("y") uint16_t tokSkipLine[] = {
     COMPOSABLE_COLOR_RUN, 0, HCAL_DEFAULT /* hcal */,
     COMPOSABLE_COLOR_RUN, 0,
     1280 /* run length - 3 */, // It's 1280 because math sorry
     COMPOSABLE_RAW_1P, 0xffff
 };
 
-extern __not_in_flash("y") uint16_t tokSkipLine2[] = {
+__not_in_flash("y") uint16_t tokSkipLine2[] = {
     COMPOSABLE_RAW_1P, 0xffff,
     COMPOSABLE_RAW_1P, 0xffff,
     COMPOSABLE_RAW_1P, 0xffff,
@@ -42,7 +42,7 @@ extern __not_in_flash("y") uint16_t tokSkipLine2[] = {
 };
 
 // A fragment of just transparent pixels
-extern __not_in_flash("y") uint16_t tokTransparents[] = {
+__not_in_flash("y") uint16_t tokTransparents[] = {
     //1 << 3, 1 << 3, 1 << 3, 1 << 3,
     //1 << 3, 1 << 3, 1 << 3, 1 << 3,
     //1, 1, 1, 1, 1, 1, 1, 1
@@ -54,7 +54,7 @@ extern __not_in_flash("y") uint16_t tokTransparents[] = {
 
 
 
-extern __not_in_flash("z") uint16_t instantTerminateLine[] = {
+__not_in_flash("z") uint16_t instantTerminateLine[] = {
     // Horizontal calibration
     COMPOSABLE_COLOR_RUN, 0b10000, 200 /* hcal */,  // At least 3 pixels of black
 
@@ -66,7 +66,7 @@ extern __not_in_flash("z") uint16_t instantTerminateLine[] = {
 };
 
 // Make ASCII into font offsets
-extern __not_in_flash("z") char fontConv[255] = {};
+__not_in_flash("z") char fontConv[255] = {};
 
 void makeFontConvTable() {
     fontConv[' '] = 0;

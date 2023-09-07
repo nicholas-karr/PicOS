@@ -38,18 +38,23 @@ class Cursor {
 
         return;
 
-        for (uint16_t i = 0; i < textBoxesCount; ++i) {
-            TextBox& test = textBoxes[i];
-            if (y_ >= test.y && y_ <= test.y_max && x_ >= test.x && x_ <= test.x_max) {
-                auto line = test.lineAt(y_);
+        for (uint16_t i = 0; i < windowCount; ++i) {
+            Window* window = windows[i];
+            TextBox* test = nullptr;
+
+            if (window->getType() == Window::Type::TextBox) { test = (TextBox*)window; }
+            else { continue; }
+
+            if (y_ >= test->y && y_ <= test->y_max && x_ >= test->x && x_ <= test->x_max) {
+                auto line = test->editableLineAt(y_);
                 if (!line) {
                     return;
                 }
-                uint16_t pos = x_ - test.x;
+                uint16_t pos = x_ - test->x;
                 pos /= 4;
 
                 if (pos >= line->allocLen_) {
-                    line->reserve(test.getWidth() / 4);
+                    line->reserve(test->getWidth() / 4);
                 }
 
                 TextCursor next = { line, pos };

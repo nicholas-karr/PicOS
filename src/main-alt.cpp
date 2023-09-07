@@ -24,12 +24,21 @@
 #include "mem.h"
 #include "button.h"
 #include "textbox.h"
+#include "cursor.h"
 #include "input.h"
-#include "snake.h"
 
 #define vga_mode vga_mode_720p_60 
 
+Button buttons[3] = { Button(0), Button(6), Button(11) };
+
 std::atomic<uint16_t> frameNum;
+
+void __time_critical_func(drawBackgroundFrag) (uint16_t y, uint32_t*& data, uint16_t& dataUsed) {
+    uint32_t* buf = data;
+    *buf++ = ((uintptr_t)(instantTerminateLine));
+    *buf++ = ((uintptr_t)(tokTextLineEnd));
+    dataUsed = (buf - data) / 2;
+}
 
 extern __not_in_flash("z") uint16_t tokBackground[] = {
     COMPOSABLE_COLOR_RUN, 0, HCAL_DEFAULT /* hcal */,
@@ -50,6 +59,36 @@ void __time_critical_func(drawBackground) (uint16_t y, Layer background) {
     background.data_used = (buf - background.data) / 2;
 }
 
+uint16_t pointerIcon[] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0xffff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xffff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0x0, 0x0, 0xffff, 0x0, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0x0, 0x0, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0x0, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0x0, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0xffff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xffff, 0xffff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+
+void __time_critical_func(drawIcons2) (uint16_t y, Layer layer) {
+    uint32_t* buf = layer.data;
+    //*buf++ = ((uintptr_t)(tokNone));
+    //*buf++ = ((uintptr_t)(tokTextLineEnd));
+    //memcpy(buf, tokNone, sizeof(tokNone)); buf += 4;
+
+    *buf++ = COMPOSABLE_COLOR_RUN << 16 | 0;
+    *buf++ = HCAL_DEFAULT << 16 | COMPOSABLE_COLOR_RUN;
+
+    if (y >= mouse.y_ && y <= mouse.y_ + 15) {
+        auto row = pointerIcon + 9 * (y - mouse.y_);
+        *buf++ = 0 << 16 | mouse.x_;
+        *buf++ = COMPOSABLE_RAW_RUN << 16 | row[0];
+        *buf++ = (9 - 3) << 16 | row[1];
+        memcpy(buf, row + 2 * 2, 6 * 2); buf += 3;
+        *buf++ = row[8] << 16 | COMPOSABLE_COLOR_RUN;
+        *buf++ = 0 << 16 | (1280 - mouse.x_ - 9);
+    }
+    else {
+        // Cover whole screen
+        *buf++ = 0 << 16 | 1280;
+    }
+
+    memcpy(buf, tokTextLineEnd, sizeof(tokTextLineEnd)); buf += 4;
+
+    layer.data_used = (buf - layer.data) / 2;
+}
+
 void __time_critical_func(drawIcons) (uint16_t y, Layer layer) {
     uint32_t* buf = layer.data;
     //memcpy(buf, tokNone, sizeof(tokNone)); buf += 4;
@@ -57,13 +96,12 @@ void __time_critical_func(drawIcons) (uint16_t y, Layer layer) {
     layer.data_used = (buf - layer.data) / 2;
 }
 
+
 void __time_critical_func(core1_vga_main)() {
     scanvideo_setup(&vga_mode);
     scanvideo_timing_enable(true);
 
     gpio_deinit(0); // Reduce banding on my board
-    gpio_deinit(buttons[1].port_); // Reduce banding on my board
-    gpio_deinit(buttons[2].port_); // Reduce banding on my board
 
     while (true) {
         scanvideo_scanline_buffer* scanline_buffer = scanvideo_begin_scanline_generation(false);
@@ -85,37 +123,44 @@ void __time_critical_func(core1_vga_main)() {
             scanline_buffer->status = SCANLINE_OK;
             scanvideo_end_scanline_generation(scanline_buffer);
         }
-
-        //if (frameNum.load() % 10 == 0) {
-            //buttons[0].update();
-            //buttons[1].update();
-            //buttons[2].update();
-        //}
     }
 }
 
 
 
 int __time_critical_func(core0_vga_main)() {
+    set_sys_clock_khz(148500, true); // 720p //todo: * 3/2
+    //set_sys_clock_khz(74250, true); // 720p
+    //set_sys_clock_khz(120000, true); // vga_mode_1280x1024_40
+    //setup_default_uart();
+    stdio_init_all();
+
+
+
     screen.init(vga_mode);
+
+    //setWholeScreenDocument();
 
     build_font();
     makeFontConvTable();
     loadPadEnd();
 
-    TextBox* spinbox1 = new TextBox();
-    spinbox1->init(0, 22 * 4, 0, 22 * FONT_HEIGHT, "Contents of \x7Fthe\nNEWLINE\n", true);
-    windows[1] = (Window*)spinbox1;
-    //windowCount++;
+    TextBox& spinbox1 = textBoxes[0];
+    TextBox& spinbox2 = textBoxes[1];
+    textBoxesCount = 2;
 
-    initSnakeGame();
-    windows[windowCount++] = (Window*)snakeInst;
+    //TextBox& gamebox = textBoxes[0];
+    //gamebox.init(400, 400, 0, 0, "Contents of \x7Fthe\nNEWLINE\n", true);
+
+    spinbox1.init(100, 200, 350, 400, "Contents of \x7Fthe\nNEWLINE\n", true);
+    //spinbox2.init(300, 400, 100, 300, "CONTENTS OF THE SECOND\nNEWLINE\n\nHELLO", false);
+    //spinbox2.init(300, 400, 300, 400, "!\"#$%&'()\ntest\n\n", false);
+    spinbox2.init(300, 400, 100, 300, "!\"#$%&'()", false);
 
     multicore_launch_core1(core1_vga_main);
 
-    buttons[0].init();
-    buttons[1].init();
-    buttons[2].init();
+    
+
 
     while (true) {
         
@@ -134,8 +179,6 @@ int __time_critical_func(core0_vga_main)() {
 
 
             serial.run();
-
-            snakeInst->tick(frameNum.load());
 
             //spinbox1.x = ROUND_UP(inputState.mouse_x, 4);
             //spinbox1.x_max = spinbox1.x + 80;
@@ -177,9 +220,7 @@ int __time_critical_func(core0_vga_main)() {
 
 
 int main() {
-    set_sys_clock_khz(148500, true); // 720p //todo: * 3/2
-
-    stdio_init_all();
+    serial.init();
 
     core0_vga_main();
 }

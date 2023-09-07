@@ -126,10 +126,25 @@ struct __attribute__((__packed__)) alignas(4) TextLineEntry {
     uint32_t* font;
 };
 
-struct TextBox {
+class Window {
+public:
+    enum class Type {
+        TextBox,
+        SnakeGame,
+    };
+
+    virtual std::string_view lineAt(int y) = 0;
+
     uint16_t x, x_max;
     uint16_t y, y_max;
 
+    int getWidth() { return x_max - x; }
+    int getHeight() { return y_max - y; }
+
+    virtual Type getType() = 0;
+};
+
+struct TextBox : public Window {
     std::pair<size_t, size_t> cursor; // Where user is writing [line, pos]
 
     bool editable = true;
@@ -197,14 +212,22 @@ struct TextBox {
         }
     }
 
-    int getWidth() { return x_max - x; }
-    int getHeight() { return y_max - y; }
-
     bool empty() {
         return lines.empty();
     }
 
-    TextLine* lineAt(int y) {
+    std::string_view lineAt(int y) {
+        y -= this->y;
+        //auto index = topOfWindow + ROUND_DOWN(y, FONT_HEIGHT);
+        //int index = topOfWindow + (y - (y % FONT_HEIGHT)) / FONT_HEIGHT;
+        int index = y / FONT_HEIGHT;
+        if (index < 0 || index >= lines.size() || lines.at(index).stringSize_ == 0) {
+            return nullptr;
+        }
+        return std::string_view(lines[index].data(), lines[index].size());
+    }
+
+    TextLine* editableLineAt(int y) {
         y -= this->y;
         //auto index = topOfWindow + ROUND_DOWN(y, FONT_HEIGHT);
         //int index = topOfWindow + (y - (y % FONT_HEIGHT)) / FONT_HEIGHT;
@@ -214,10 +237,14 @@ struct TextBox {
         }
         return &lines[index];
     }
+
+    Type getType() {
+        return Type::TextBox;
+    }
 };
 
-static TextBox textBoxes[10];
-static int textBoxesCount = 0;
+static Window* windows[10];
+static int windowCount = 0;
 
 static RingBuffer<TextLinePreamble, 32> preambles;
 
@@ -261,17 +288,21 @@ struct Layer {
     uint16_t& data_used;
 };
 
+int alignedSize(int size) {
+    return ROUND_UP(size, 4);
+}
+
 
 // Fill layer 0 with text
 void __time_critical_func(renderTextBoxes) (uint16_t y, Layer text) {
     //constexpr uint16_t expectedWidth = 160; //160 //(1280 / (8 * 2));
     
-    TextBox* relevant[textBoxesCount];
+    Window* relevant[windowCount];
     uint16_t relevantCount = 0;
 
     // Store which text boxes are on this scanline (probably has to happen every frame?)
-    for (uint32_t i = 0; i < textBoxesCount; ++i) {
-        TextBox& test = textBoxes[i];
+    for (uint32_t i = 0; i < windowCount; ++i) {
+        Window& test = *windows[i];
         if (y >= test.y && y <= test.y_max) {
             relevant[relevantCount++] = &test;
         }
@@ -288,7 +319,7 @@ void __time_critical_func(renderTextBoxes) (uint16_t y, Layer text) {
     //relevant[relevantCount] = &(textBoxes[0]);
 
     // sort by x_min
-    std::sort(relevant, relevant + relevantCount, [](TextBox* lhs, TextBox* rhs) { return lhs->x < rhs->x; });
+    std::sort(relevant, relevant + relevantCount, [](Window* lhs, Window* rhs) { return lhs->x < rhs->x; });
 
     // Pointer to an array of pointers to tokens/colors
     uint32_t* buf = text.data;
@@ -303,7 +334,7 @@ void __time_critical_func(renderTextBoxes) (uint16_t y, Layer text) {
     uint32_t* bufItr = buf;
 
     for (uint16_t i = 0; i < relevantCount && entriesCnt < 8; ++i) {
-        const TextBox& box = *relevant[i];
+        const Window& box = *relevant[i];
 
         if (box.x >= screen.x_end || xitr >= box.x_max) { 
             continue; 
@@ -321,18 +352,18 @@ void __time_critical_func(renderTextBoxes) (uint16_t y, Layer text) {
             }
         }
 
-        auto line = relevant[i]->lineAt(y);      //(y);
-        if (line) {
-            size_t length = line->alignedSize();
+        std::string_view line = relevant[i]->lineAt(y);      //(y);
+        if (line.size() != 0) {
+            size_t length = alignedSize(line.size());
             uint16_t localY = y - relevant[i]->y;
-            char* data = line->data();
+            const char* data = line.data();
 
             if (xitr > box.x) { // Try to remove some characters if another text box is over this one
                 length -= (xitr - box.x) / 4;
                 length = ROUND_UP(length, 4);
                 size_t offset = ((xitr - box.x) / 4);
                 offset = ROUND_UP(offset, 4);
-                if (offset >= line->size()) {
+                if (offset >= line.size()) {
                     continue;
                 }
                 data += offset;

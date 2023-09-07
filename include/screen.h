@@ -24,11 +24,4 @@ public:
 
 static Screen screen;
 
-struct Window {
-    uint16_t x, x_max;
-    uint16_t y, y_max;
-
-    
-};
-
 #endif

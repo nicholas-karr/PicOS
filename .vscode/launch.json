@@ -11,7 +11,7 @@
             "cwd": "${workspaceRoot}",
             "environment": [],
             "externalConsole": true,
-            "debugServerArgs": "-c \"adapter_khz 500\" -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c init -c \"reset init\"",
+            "debugServerArgs": "-c \"adapter_khz 5000\" -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c init -c \"reset init\"",
             "serverLaunchTimeout": 5000,
             "filterStderr": true,
             "filterStdout": true,
@@ -33,8 +33,8 @@
             },
             "linux": {
                 "MIMode": "gdb",
-                "MIDebuggerPath": "/usr/bin/arm-none-eabi-gdb",
-                "debugServerPath": "/usr/local/bin/openocd"
+                "debugServerPath": "/usr/local/bin/openocd",
+                "miDebuggerPath": "/usr/bin/arm-none-eabi-gdb"
             },
             "osx": {
                 "MIMode": "gdb",

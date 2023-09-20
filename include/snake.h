@@ -339,17 +339,14 @@ class SnakeGame : public Window {
 
         if (buttons[0].justPressed()) {
             snake.getHead().direction = Direction::LEFT;
-            std::cout << "TURN LEFT\r\n";
         }
         else if (buttons[1].justPressed()) {
             static bool s = false;
             s = !s;
-            snake.getHead().direction = s ? Direction::UP : Direction::DOWN;
-            std::cout << "TURN UPDOWN\r\n";
+            snake.getHead().turn(3);
         }
         else if (buttons[2].justPressed()) {
-            snake.getHead().direction = Direction::RIGHT;
-            std::cout << "TURN RIGHT\r\n";
+            snake.getHead().turn(1);
         }
     } // getInput
 
@@ -396,7 +393,7 @@ class SnakeGame : public Window {
         buttons[1].update();
         buttons[2].update();
 
-        if (frameNum % 15 == 0 && lastRunFrame != frameNum) {
+        if (frameNum % 10 == 0 && lastRunFrame != frameNum) {
             lastRunFrame = frameNum;
 
             getInput();

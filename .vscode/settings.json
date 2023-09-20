@@ -58,5 +58,6 @@
         "stop_token": "cpp",
         "thread": "cpp"
     },
-    "cmake.configureOnOpen": true
+    "cmake.configureOnOpen": true,
+    "C_Cpp.default.compilerPath": "/usr/bin/arm-none-eabi-g++"
 }

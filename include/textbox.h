@@ -120,7 +120,7 @@ struct TextLinePreamble {
     }
 };
 
-struct __attribute__((__packed__)) alignas(4) TextLineEntry {
+struct __attribute__((__packed__)) TextLineEntry {
     const char* buf;
     const uint32_t* c_end;
     uint32_t* font;

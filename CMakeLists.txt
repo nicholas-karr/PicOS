@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
 
-set(PICO_SDK_PATH ../../pico-sdk)
-set(PICO_EXTRAS_PATH ../../pico-extras)
-set(PICO_PLAYGROUND_PATH ../../pico-playground)
+set(PICO_SDK_PATH ../deps/pico-sdk)
+set(PICO_EXTRAS_PATH ../deps/pico-extras)
+set(PICO_PLAYGROUND_PATH ../deps/pico-playground)
 
 
 

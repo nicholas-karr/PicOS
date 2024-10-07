@@ -68,18 +68,11 @@ target_compile_definitions(picos PRIVATE
 
         # Layer 2 Text: DMA rendered
         PICO_SCANVIDEO_MAX_SCANLINE_BUFFER2_WORDS=600
-        PICO_SCANVIDEO_PLANE2_FRAGMENT_DMA=true
         PICO_SCANVIDEO_PLANE2_FIXED_FRAGMENT_DMA=true
 
         # Layer 3 Icons: DMA rendered?
         #PICO_SCANVIDEO_MAX_SCANLINE_BUFFER3_WORDS=400
-        #PICO_SCANVIDEO_PLANE3_FRAGMENT_DMA=true
-        #PICO_SCANVIDEO_PLANE3_FIXED_FRAGMENT_DMA=true
 )
-
-#target_compile_options(picos PRIVATE -Wall -Wextra -Wpedantic -Wno-unused-parameter -Wno-vla -Wno-sign-compare)
-
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frtti")
 
 pico_add_extra_outputs(picos)
 
@@ -90,16 +83,9 @@ target_link_options(picos PUBLIC
         "-fno-fat-lto-objects"
         "-flto")
 
-
 target_link_libraries(picos PRIVATE
         pico_multicore
         pico_stdlib
-        pico_scanvideo_dpi
-
-        pico_btstack_classic 
-        pico_btstack_ble
-        pico_btstack_cyw43
-        pico_cyw43_arch_none
-        )
+        pico_scanvideo_dpi)
 
 include_directories(picos ../pico-playground/scanvideo/render include)

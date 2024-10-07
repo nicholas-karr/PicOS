@@ -1,9 +1,5 @@
 #include <pico/scanvideo.h>
 
-//
-// ITS LEGAL TO POINT TO LATER IN THE DMA BUFFER!!!!!!!
-//
-
 #define HCAL_DEFAULT 30 //todo: get rid of the ~10 pixels of right overscan (alignment issues :/)
 
 __not_in_flash("x") uint16_t tokTextLineBegin[] = {

@@ -38,8 +38,6 @@ typedef struct {
     uint8_t line_height, base_line;
 } lv_font_t;
 
-extern const lv_font_t ubuntu_mono6;
 extern const lv_font_t ubuntu_mono8;
-extern const lv_font_t ubuntu_mono10;
 extern const lv_font_t lcd;
 #endif //SOFTWARE_FONT_H

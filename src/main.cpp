@@ -25,20 +25,19 @@
 #include "mem.h"
 #include "button.h"
 #include "textbox.h"
-#include "input.h"
 #include "snake.h"
 
 #define vga_mode vga_mode_720p_60 
 
 std::atomic<uint16_t> frameNum;
 
-extern __not_in_flash("z") uint16_t tokBackground[] = {
+__not_in_flash("z") uint16_t tokBackground[] = {
     COMPOSABLE_COLOR_RUN, 0, HCAL_DEFAULT /* hcal */,
     COMPOSABLE_COLOR_RUN, PICO_SCANVIDEO_ALPHA_MASK | PICO_SCANVIDEO_PIXEL_FROM_RGB5(1 << 3, 2, 2), 1280,
     COMPOSABLE_RAW_1P, 0
 };
 
-extern __not_in_flash("z") uint16_t tokNone[] = {
+__not_in_flash("z") uint16_t tokNone[] = {
     COMPOSABLE_COLOR_RUN, 0, HCAL_DEFAULT /* hcal */,
     COMPOSABLE_COLOR_RUN, 0xFFFF, 1280,
     COMPOSABLE_RAW_1P, 0
@@ -132,9 +131,6 @@ int __time_critical_func(core0_vga_main)() {
             //if (buttons[2].get()) {
             //    screen.x_start--;
             //}
-
-
-            serial.run();
 
             snakeInst->tick(frameNum.load());
 

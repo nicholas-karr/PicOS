@@ -369,7 +369,7 @@ void __time_critical_func(renderTextBoxes) (uint16_t y, Layer text) {
                 data += offset;
             }
 
-            entries[entriesCnt++] = { data, bufItr += length, font_raw_pixels + FONT_WIDTH_WORDS * (localY % FONT_HEIGHT) }; // todo: replace aligned size with unaligned and use geq in asm
+            entries[entriesCnt++] = { data, bufItr += length, font_raw_pixels + FRAGMENT_WORDS * (localY % FONT_HEIGHT) }; // todo: replace aligned size with unaligned and use geq in asm
             xitr += length * 4;
         }
 
@@ -387,7 +387,7 @@ void __time_critical_func(renderTextBoxes) (uint16_t y, Layer text) {
     //entries[entriesCnt++] = { (char*)nullptr, buf + 160, nullptr }; // Fill in the rest of the line with transparent pixels
     entries[entriesCnt++] = { (char*)nullptr, nullptr, nullptr }; // End of line meta token
 
-    uint32_t* font = font_raw_pixels; // + FONT_WIDTH_WORDS * (y % FONT_HEIGHT);
+    uint32_t* font = font_raw_pixels; // + FRAGMENT_WORDS * (y % FONT_HEIGHT);
     std::fill_n(bufItr, buf + 160 - bufItr, uintptr_t(tokTransparents));
 
     render_relevant_text_boxes(buf, font, entries);

@@ -1,10 +1,3 @@
-// Snake Game
-// Nicholas Karr
-// created: 8/28/2023
-// 2337.501
-// Simulation of the game Snake with immediate-mode rendering
-// todo: speed multiplier, pausing
-
 #include <iostream> // cout
 #include <vector> // vector
 #include <array> // array

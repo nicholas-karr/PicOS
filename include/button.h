@@ -17,11 +17,7 @@ public:
     }
 
     inline static bool cleanGet(uint32_t port) {
-        //gpio_function f = gpio_get_function(port);
-
-        bool ret = gpio_get(port); //(1ul << port) && gpio_get(port); //sio_hw->gpio_in;
-
-        //gpio_set_function(port, f);
+        bool ret = gpio_get(port);
 
         return ret;
     }

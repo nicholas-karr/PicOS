@@ -38,6 +38,7 @@
     "raspberry-pi-pico.ninjaPath": "${HOME}/.pico-sdk/ninja/v1.12.1/ninja",
     "files.associations": {
         "compare": "cpp",
-        "cstdint": "cpp"
+        "cstdint": "cpp",
+        "atomic": "cpp"
     }
 }

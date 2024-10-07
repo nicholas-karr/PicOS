@@ -1,9 +1,11 @@
+// Manually vectorized memcpy
+
 .align 2
 .section .time_critical.memcpyFast8
 .global memcpyFast8
 .type memcpyFast8,%function
 .thumb_func
-// void memcpyFast8(void* dest, void* src, size_t num);
+// void memcpyFast8(void* __restrict__ dest, void* __restrict__ src, size_t num);
 memcpyFast8:
     add r2, r0, r2 // End ptr in r2
 
@@ -23,7 +25,7 @@ memcpyFast8:
 .global memcpyFast128
 .type memcpyFast128,%function
 .thumb_func
-// void memcpyFast128(void* dest, void* src, size_t num);
+// void memcpyFast128(void* __restrict__ dest, void* __restrict__ src, size_t num);
 memcpyFast128:
     add r2, r0, r2 // End ptr in r2
 

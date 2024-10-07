@@ -47,4 +47,6 @@ public:
     }
 };
 
+static Button buttons[3] = { Button(0), Button(6), Button(11) };
+
 #endif

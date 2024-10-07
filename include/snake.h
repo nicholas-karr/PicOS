@@ -6,8 +6,6 @@
 #include <chrono>
 
 #include "textbox.h"
-#include "device.h"
-
 
 // Static configuration
 constexpr static const int FIELD_WIDTH = 40;

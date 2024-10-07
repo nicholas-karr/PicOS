@@ -35,6 +35,7 @@ add_executable(picos
         src/mem.S
         src/main.cpp
         src/font8.c
+        src/draw.cpp
         )
 
 target_compile_definitions(picos PRIVATE

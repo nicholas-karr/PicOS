@@ -1,6 +1,6 @@
 extern "C" {
-    void memcpyFast8(void* dest, void* src, size_t num);
-    void memcpyFast128(void* dest, void* src, size_t num);
+    void memcpyFast8(void* __restrict__ dest, void* __restrict__ src, size_t num);
+    void memcpyFast128(void* __restrict__ dest, void* __restrict__ src, size_t num);
 }
 
 // Non-overlapping fast memcpy

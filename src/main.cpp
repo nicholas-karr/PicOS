@@ -5,7 +5,6 @@
 #include <string.h>
 #include "pico.h"
 #include "hardware/gpio.h"
-//#include "spans.h"
 #include "hardware/clocks.h"
 #include "pico/scanvideo.h"
 #include "pico/scanvideo/composable_scanline.h"
@@ -27,38 +26,12 @@
 #include "textbox.h"
 #include "snake.h"
 
-#define vga_mode vga_mode_720p_60 
+#define vgaMode vga_mode_720p_60 
 
 std::atomic<uint16_t> frameNum;
 
-__not_in_flash("z") uint16_t tokBackground[] = {
-    COMPOSABLE_COLOR_RUN, 0, HCAL_DEFAULT /* hcal */,
-    COMPOSABLE_COLOR_RUN, PICO_SCANVIDEO_ALPHA_MASK | PICO_SCANVIDEO_PIXEL_FROM_RGB5(1 << 3, 2, 2), 1280,
-    COMPOSABLE_RAW_1P, 0
-};
-
-__not_in_flash("z") uint16_t tokNone[] = {
-    COMPOSABLE_COLOR_RUN, 0, HCAL_DEFAULT /* hcal */,
-    COMPOSABLE_COLOR_RUN, 0xFFFF, 1280,
-    COMPOSABLE_RAW_1P, 0
-};
-
-void __time_critical_func(drawBackground) (uint16_t y, Layer background) {
-    uint32_t* buf = background.data;
-    memcpyFast<16>(buf, tokBackground); buf += 4;
-    memcpyFast<16>(buf, tokTextLineEnd); buf += 4;
-    background.data_used = (buf - background.data) / 2;
-}
-
-void __time_critical_func(drawIcons) (uint16_t y, Layer layer) {
-    uint32_t* buf = layer.data;
-    //memcpy(buf, tokNone, sizeof(tokNone)); buf += 4;
-    memcpy(buf, tokTextLineEnd, sizeof(tokTextLineEnd)); buf += 4;
-    layer.data_used = (buf - layer.data) / 2;
-}
-
 void __time_critical_func(core1_vga_main)() {
-    scanvideo_setup(&vga_mode);
+    scanvideo_setup(&vgaMode);
     scanvideo_timing_enable(true);
 
     gpio_deinit(0); // Reduce banding on my board
@@ -79,25 +52,16 @@ void __time_critical_func(core1_vga_main)() {
             scanline_buffer->fragment_words2 = FRAGMENT_WORDS;
             renderTextBoxes(y, {scanline_buffer->data2, scanline_buffer->data2_used});
 
-            //scanline_buffer->fragment_words3 = FRAGMENT_WORDS;
-            //drawIcons(y, {scanline_buffer->data2, scanline_buffer->data2_used});
-
             scanline_buffer->status = SCANLINE_OK;
             scanvideo_end_scanline_generation(scanline_buffer);
         }
-
-        //if (frameNum.load() % 10 == 0) {
-            //buttons[0].update();
-            //buttons[1].update();
-            //buttons[2].update();
-        //}
     }
 }
 
 
 
 int __time_critical_func(core0_vga_main)() {
-    screen.init(vga_mode);
+    screen.init(vgaMode);
 
     build_font();
     makeFontConvTable();
@@ -122,16 +86,6 @@ int __time_critical_func(core0_vga_main)() {
 
     
         if (scanvideo_in_vblank()) {
-            
-            //uint16_t& hcal = beginning_of_line[2];
-            //if (buttons[0].get()) {
-                //color = ((color << 1) == 0) ? 1 : color << 1; //rollover
-            //    screen.x_start++;
-            //}
-            //if (buttons[2].get()) {
-            //    screen.x_start--;
-            //}
-
             snakeInst->tick(frameNum.load());
 
             //spinbox1.x = ROUND_UP(inputState.mouse_x, 4);
@@ -155,19 +109,6 @@ int __time_critical_func(core0_vga_main)() {
             spinbox2.y = 250.0 + 150.0 * sinf(float(frameNum) / 50.0 + M_PI);
             spinbox2.y = ROUND_UP(spinbox2.y, 4);
             spinbox2.y_max = spinbox2.y + 160;*/
-
-            int c = getchar_timeout_us(0);
-            //int c = EOF;
-            if (c == EOF) {}
-            else if (c == 'r') {
-                //screen.x_start--;
-                tokTextLineBegin[2]++;
-                printf("to %d\r\n", tokTextLineBegin[2]);
-            }
-            else if (c == 'l') {
-                tokTextLineBegin[2]--;
-                printf("to %d\r\n", tokTextLineBegin[2]);
-            }
         }
     }
 }

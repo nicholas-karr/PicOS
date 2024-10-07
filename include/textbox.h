@@ -10,7 +10,7 @@
 #include "fontbuild.h"
 #include "screen.h"
 #include "ringbuf.h"
-#include "textbox-decls.h"
+#include "draw.h"
 
 #define STR_ALIGNED(S) ( (_Alignas(4) char []){ S } )
 
@@ -283,11 +283,6 @@ void loadPadEnd() {
     memset(padEnd + CHARACTERS_IN_SCREEN * 4 - 2, '\x7F' - 0x20, 1);
 }
 
-struct Layer {
-    uint32_t*& data;
-    uint16_t& data_used;
-};
-
 int alignedSize(int size) {
     return ROUND_UP(size, 4);
 }
@@ -394,7 +389,7 @@ void __time_critical_func(renderTextBoxes) (uint16_t y, Layer text) {
     
     buf += 160;
 
-    *buf++ = ((uintptr_t)(tokTextLineEnd));
+    *buf++ = ((uintptr_t)(tokLineEnd));
     *buf++ = 0;
 
     text.data_used = (buf - text.data) / 2;

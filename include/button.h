@@ -1,6 +1,7 @@
 #ifndef PICOS_BUTTON_H
 #define PICOS_BUTTON_H
 
+#include <array>
 #include "hardware/gpio.h"
 
 class Button {
@@ -47,6 +48,6 @@ public:
     }
 };
 
-static Button buttons[3] = { Button(0), Button(6), Button(11) };
+static std::array<Button, 3> buttons = { Button(0), Button(6), Button(11) };
 
 #endif

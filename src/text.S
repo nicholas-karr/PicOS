@@ -12,7 +12,7 @@
 .global render_relevant_text_boxes
 .type render_relevant_text_boxes,%function
 .thumb_func
-// move 160 pointers to 8 pixels into buf
+// Fill buf with 160 pointers to 8 pixels each from the font bitmaps and windows
 // void render_relevant_text_boxes(uint32_t* buf, uint32_t* font, TextLineEntry* entries)
 render_relevant_text_boxes:
     // r0: buf, r1: ptr to font, r2: entries
@@ -24,7 +24,7 @@ render_relevant_text_boxes:
       adds r2, #12 // redundant end of loop
 
       // Resolve first entry
-      // r4: loop end, r5: characters
+      // r4: loop end
       ldr r4, [r2, #4]
 
       // Exit early for sentinel entry c_end == 0
@@ -39,11 +39,7 @@ render_relevant_text_boxes:
       beq transparent_entry
 
       // adjust r1
-      //ldr r3, [r2, #8] // Load y of string (4 * (y % 15))
-      //ldr r1, [sp] // Load back font pointer that got clobbered
       ldr r1, [r2, #8] // Load font ptr
-      
-      //adds r1, r3
 
       movs r3, #240 // Font scalar
       
@@ -86,6 +82,7 @@ render_relevant_text_boxes:
       transparent_entry:
         ldr r6, =tokTransparents // Get compiler to load the 32-bit address of tokTransparents
 
+        // Not vectorized, but also doesn't do any font math
         loop_transparent:
           str r6, [r0]
           //str r6, [r0, #4]
@@ -97,7 +94,6 @@ render_relevant_text_boxes:
           bne loop_transparent
 
         b loop_entries
-
 
     end:
     pop  {r1, r4, r5, r6, r7}

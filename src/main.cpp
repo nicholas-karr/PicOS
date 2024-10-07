@@ -66,13 +66,14 @@ int __time_critical_func(core0_vga_main)() {
     build_font();
     loadPadEnd();
 
-    TextBox* spinbox1 = new TextBox();
+    /*TextBox* spinbox1 = new TextBox();
     spinbox1->init(0, 22 * 4, 0, 22 * FONT_HEIGHT, "Contents of \x7Fthe\nNEWLINE\n", true);
-    windows[1] = (Window*)spinbox1;
+    windows[1] = (Window*)spinbox1;*/
     //windowCount++;
 
     initSnakeGame();
     windows[windowCount++] = (Window*)snakeInst;
+    windows[windowCount++] = (Window*)snakeScoreInst;
 
     multicore_launch_core1(core1_vga_main);
 
@@ -81,11 +82,9 @@ int __time_critical_func(core0_vga_main)() {
     buttons[2].init();
 
     while (true) {
-        
-
-    
         if (scanvideo_in_vblank()) {
             snakeInst->tick(frameNum.load());
+            snakeScoreInst->tick(frameNum.load());
 
             //spinbox1.x = ROUND_UP(inputState.mouse_x, 4);
             //spinbox1.x_max = spinbox1.x + 80;

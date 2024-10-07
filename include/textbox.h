@@ -7,6 +7,7 @@
 #include <string_view>
 #include <algorithm>
 
+#include "util.h"
 #include "fontbuild.h"
 #include "screen.h"
 #include "ringbuf.h"
@@ -121,8 +122,13 @@ struct TextLinePreamble {
 };
 
 struct __attribute__((__packed__)) TextLineEntry {
+    // Text to be rendered
     const char* buf;
+
+    // Pointer to last DMA instruction to be written by this entry
     const uint32_t* c_end;
+
+    // Current line of the font bitmap to draw from
     uint32_t* font;
 };
 
@@ -131,6 +137,7 @@ public:
     enum class Type {
         TextBox,
         SnakeGame,
+        SnakeScore
     };
 
     virtual std::string_view lineAt(int y) = 0;
@@ -138,10 +145,58 @@ public:
     uint16_t x, x_max;
     uint16_t y, y_max;
 
-    int getWidth() { return x_max - x; }
-    int getHeight() { return y_max - y; }
-
     virtual Type getType() = 0;
+};
+
+// A window stored as a text buffer of fixed size that may be modified
+template <int WIDTH, int HEIGHT>
+class FixedTextBuf : public Window {
+public:
+    static_assert(WIDTH % FRAGMENT_WORDS == 0);
+
+    char text[WIDTH * HEIGHT] = {};
+
+    FixedTextBuf(int x, int y) {
+        this->x = x;
+        this->y = y;
+
+        this->x_max = x + WIDTH * FONT_WIDTH;
+        this->y_max = y + HEIGHT * FONT_HEIGHT - 1;
+
+        setAll(' ' - 0x20);
+    }
+
+    // Access the text character at a position on the field
+    char& at(Position pos) {
+        return text[(pos.y * WIDTH) + pos.x];
+    }
+
+    void setAll(char c) {
+        for (int y = 0; y < WIDTH; y++) {
+            for (int x = 0; x < HEIGHT; x++) {
+                at({x, y}) = c;
+            }
+        }
+    }
+
+    std::string_view lineAt(int y) {
+        y -= this->y;
+        int index = y / FONT_HEIGHT;
+        if (index < 0 || index > HEIGHT + 1) {
+            return nullptr;
+        }
+        
+        return std::string_view(text + index * (WIDTH), HEIGHT);
+    }
+
+    void convAsciiToRender() {
+        for (int y = 0; y < WIDTH; y++) {
+            for (int x = 0; x < HEIGHT; x++) {
+                char& c = at({x, y});
+                c = fontConv[c];
+            }
+        }
+    }
 };
 
 struct TextBox : public Window {
@@ -297,21 +352,11 @@ void __time_critical_func(renderTextBoxes) (uint16_t y, Layer text) {
 
     // Store which text boxes are on this scanline (probably has to happen every frame?)
     for (uint32_t i = 0; i < windowCount; ++i) {
-        Window& test = *windows[i];
-        if (y >= test.y && y <= test.y_max) {
-            relevant[relevantCount++] = &test;
+        Window* test = windows[i];
+        if (y >= test->y && y <= test->y_max) {
+            relevant[relevantCount++] = test;
         }
     }
-
-    if (relevantCount == 0) {
-        uint32_t* buf = text.data;
-        
-        *buf++ = ((uintptr_t)(tokTextLineBegin));
-        text.data_used = (buf - text.data) / 2;
-        //return;
-    }
-
-    //relevant[relevantCount] = &(textBoxes[0]);
 
     // sort by x_min
     std::sort(relevant, relevant + relevantCount, [](Window* lhs, Window* rhs) { return lhs->x < rhs->x; });
@@ -320,8 +365,6 @@ void __time_critical_func(renderTextBoxes) (uint16_t y, Layer text) {
     uint32_t* buf = text.data;
 
     *buf++ = ((uintptr_t)(tokTextLineBegin));
-
-    
 
     TextLineEntry entries[8] = {};
     uint16_t entriesCnt = 0;

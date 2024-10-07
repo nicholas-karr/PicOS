@@ -5,6 +5,7 @@
 
 const lv_font_t *font = &ubuntu_mono8;
 
+#define FONT_WIDTH FRAGMENT_WORDS
 #define FONT_HEIGHT 15
 #define FONT_SIZE_WORDS (FONT_HEIGHT * FRAGMENT_WORDS)
 

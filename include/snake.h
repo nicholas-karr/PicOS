@@ -4,8 +4,10 @@
 #include <thread> // sleep_for
 #include <ctime> // time() for seeding RNG
 #include <chrono>
+#include <string_view>
 
 #include "textbox.h"
+#include "util.h"
 
 // Static configuration
 
@@ -38,15 +40,6 @@ int getRandom(int min, int max) {
 
     return (int)r;
 } // getRandom
-
-class Position {
-  public:
-    int x, y;
-
-    bool operator==(const Position& rhs) const noexcept {
-        return this->x == rhs.x && this->y == rhs.y;
-    } // operator==
-};
 
 class SnakeSection {
   public:
@@ -96,38 +89,24 @@ class SnakeSection {
 
 class Field {
 public:
-
     // Buffer storing visual state of the field
-    char fieldText[FIELD_WIDTH * FIELD_HEIGHT] = {};
+    FixedTextBuf<FIELD_WIDTH, FIELD_HEIGHT>& fieldText;
 
-    // Access the text character at a position on the field
-    char& at(Position position) {
-        return fieldText[(position.y * FIELD_WIDTH) + position.x];
-    } // at
+    Field(FixedTextBuf<FIELD_WIDTH, FIELD_HEIGHT>& fieldText): fieldText(fieldText) {}
 
     bool isWall(Position position) {
         return position.x == 0 || position.x == (FIELD_WIDTH - 1) ||
                position.y == 0 || position.y == (FIELD_HEIGHT - 1);
-    } // isWall
+    }
 
     // Remove all characters added to the field, leaving only walls
     void reset() {
         for (int x = 0; x < FIELD_WIDTH; x++) {
             for (int y = 0; y < FIELD_HEIGHT; y++) {
-                at({ x, y }) = isWall({ x, y }) ? WALL_CHAR : SPACE_CHAR;
+                fieldText.at({x, y}) = isWall({ x, y }) ? WALL_CHAR : SPACE_CHAR;
             }
         }
-    } // reset
-
-    // Print the field to the console
-    void print() {
-        for (int y = 0; y < FIELD_HEIGHT; y++) {
-            for (int x = 0; x < FIELD_WIDTH; x++) {
-                std::cout << at({ x, y });
-            }
-            std::cout << '\n';
-        }
-    } // print
+    }
 };
 
 class Fruit {
@@ -139,7 +118,7 @@ class Fruit {
     } // place
 
     void draw(Field& field) {
-        field.at(position) = FRUIT_CHAR;
+        field.fieldText.at(position) = FRUIT_CHAR;
     } // draw
 };
 
@@ -157,7 +136,7 @@ class Snake {
     void draw(Field& field) {
         for (int i = sections.size() - 1; i >= 0; i--) {
             SnakeSection& section = sections[i];
-            field.at(section.position) = i == 0 ? SNAKE_HEAD_CHAR : SNAKE_BODY_CHAR;
+            field.fieldText.at(section.position) = i == 0 ? SNAKE_HEAD_CHAR : SNAKE_BODY_CHAR;
         }
     } // draw
 
@@ -181,13 +160,23 @@ class Snake {
     } // isDead
 };
 
-class SnakeGame : public Window {
+class SnakeGame : public FixedTextBuf<FIELD_WIDTH, FIELD_HEIGHT> {
+public:
     int score = 0;
+
     int lastRunFrame = 0;
 
     Field field;
     Snake snake;
     std::array<Fruit, FRUIT_COUNT> fruits;
+
+    SnakeGame() : FixedTextBuf(0, 0), field(*this) {
+        snake.place(placeObject(), Direction::RIGHT);
+
+        for (int i = 0; i < (int)fruits.size(); i++) {
+            fruits[i].place(placeObject());
+        }
+    }
 
     void tickGame(double deltaTime) {
         tickSnake(deltaTime);
@@ -352,24 +341,6 @@ class SnakeGame : public Window {
         }
     } // clearConsole
 
-  public:
-    SnakeGame() {
-        memset(field.fieldText, ' ' - 0x20, sizeof(field.fieldText));
-
-        x = 0;
-        x_max = FIELD_WIDTH * 4;
-        //x_max -= 4;
-        y = 0;
-        y_max = FIELD_HEIGHT * FONT_HEIGHT;
-        //y_max -= 4;
-
-        snake.place(placeObject(), Direction::RIGHT);
-
-        for (int i = 0; i < (int)fruits.size(); i++) {
-            fruits[i].place(placeObject());
-        }
-    } // SnakeGame()
-
     void run() {
         while (!snake.isDead()) {
             clearConsole();
@@ -399,20 +370,6 @@ class SnakeGame : public Window {
         }
     }
 
-    std::string_view lineAt(int y) {
-        //return std::string_view(field.fieldText + y * FIELD_WIDTH);
-        //return windows[1]->lineAt(y);
-
-        y -= this->y;
-        int index = y / FONT_HEIGHT;
-        if (index < 0 || index > FIELD_HEIGHT + 1) {
-            return nullptr;
-        }
-        //index %= 10;
-        return std::string_view(field.fieldText + index * (FIELD_WIDTH), FIELD_WIDTH);// + y * (FIELD_WIDTH + 1), 5);
-        //return windows[1]->lineAt(y);
-    }
-
     Window::Type getType() {
         return Window::Type::SnakeGame;
     }
@@ -420,8 +377,44 @@ class SnakeGame : public Window {
 
 SnakeGame* snakeInst;
 
+constexpr static const int SCORE_WIDTH = 20;
+constexpr static const int SCORE_HEIGHT = 5;
+
+class SnakeScore : public FixedTextBuf<SCORE_WIDTH, SCORE_HEIGHT> {
+    public:
+    SnakeScore(): FixedTextBuf(snakeInst->x_max + FONT_WIDTH, 0) {}
+
+    void tick(uint16_t frameNum) {
+        if (frameNum % 10 == 0) {
+            setAll(' ');
+
+            int len = snprintf(&at({0, 0}), SCORE_WIDTH, "Score: %d", snakeInst->score);
+            at({len, 0}) = ' ';
+
+
+            absolute_time_t time = get_absolute_time();
+            uint32_t ms = to_ms_since_boot(time);
+            len = snprintf(&at({0, 1}), SCORE_WIDTH, "Time: %d", int(ms / 1000));
+            at({len, 1}) = ' ';
+
+            len = snprintf(&at({0, 2}), SCORE_WIDTH, "Controls: Left  Right  Menu");
+            at({len, 2}) = ' ';
+
+            convAsciiToRender();
+        }
+    }
+
+    Window::Type getType() {
+        return Window::Type::SnakeScore;
+    }
+};
+
+SnakeScore* snakeScoreInst;
+
 void initSnakeGame() {
     srand((unsigned int)std::time(NULL));
 
     snakeInst = new SnakeGame();
+
+    snakeScoreInst = new SnakeScore();
 }

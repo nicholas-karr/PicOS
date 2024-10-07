@@ -60,9 +60,7 @@ pico_add_extra_outputs(picos)
 pico_enable_stdio_usb(picos 1)
 pico_enable_stdio_uart(picos 0)
 
-target_link_options(picos PUBLIC
-        "-fno-fat-lto-objects"
-        "-flto")
+target_link_options(picos PUBLIC "-flto")
 
 target_link_libraries(picos PRIVATE
         pico_multicore

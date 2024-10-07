@@ -8,7 +8,11 @@
 #include "textbox.h"
 
 // Static configuration
+
+// Width of the field, in characters
 constexpr static const int FIELD_WIDTH = 40;
+
+// Height of the field, in characters
 constexpr static const int FIELD_HEIGHT = 40;
 
 constexpr static const auto FRAME_LATENCY = std::chrono::milliseconds(250);
@@ -94,7 +98,7 @@ class Field {
 public:
 
     // Buffer storing visual state of the field
-    char fieldText[(FIELD_WIDTH + 1) * (FIELD_HEIGHT + 1)] = {};
+    char fieldText[FIELD_WIDTH * FIELD_HEIGHT] = {};
 
     // Access the text character at a position on the field
     char& at(Position position) {
@@ -102,14 +106,14 @@ public:
     } // at
 
     bool isWall(Position position) {
-        return position.x == 0 || position.x == FIELD_WIDTH ||
-               position.y == 0 || position.y == FIELD_HEIGHT;
+        return position.x == 0 || position.x == (FIELD_WIDTH - 1) ||
+               position.y == 0 || position.y == (FIELD_HEIGHT - 1);
     } // isWall
 
     // Remove all characters added to the field, leaving only walls
     void reset() {
-        for (int x = 0; x < FIELD_WIDTH + 1; x++) {
-            for (int y = 0; y < FIELD_HEIGHT + 1; y++) {
+        for (int x = 0; x < FIELD_WIDTH; x++) {
+            for (int y = 0; y < FIELD_HEIGHT; y++) {
                 at({ x, y }) = isWall({ x, y }) ? WALL_CHAR : SPACE_CHAR;
             }
         }
@@ -117,8 +121,8 @@ public:
 
     // Print the field to the console
     void print() {
-        for (int y = 0; y < FIELD_HEIGHT + 1; y++) {
-            for (int x = 0; x < FIELD_WIDTH + 1; x++) {
+        for (int y = 0; y < FIELD_HEIGHT; y++) {
+            for (int x = 0; x < FIELD_WIDTH; x++) {
                 std::cout << at({ x, y });
             }
             std::cout << '\n';
@@ -234,14 +238,14 @@ class SnakeGame : public Window {
         if (field.isWall(head.position)) {
             if (PASS_THROUGH_WALLS) {
                 // Pass through to the other side
-                if (head.position.x == FIELD_WIDTH) {
+                if (head.position.x == FIELD_WIDTH - 1) {
                     head.position.x = 1;
                 } else if (head.position.x == 0) {
-                    head.position.x = FIELD_WIDTH - 1;
-                } else if (head.position.y == FIELD_HEIGHT) {
+                    head.position.x = FIELD_WIDTH - 2;
+                } else if (head.position.y == FIELD_HEIGHT - 1) {
                     head.position.y = 1;
                 } else if (head.position.y == 0) {
-                    head.position.y = FIELD_HEIGHT - 1;
+                    head.position.y = FIELD_HEIGHT - 2;
                 }
             } else {
                 // Die when a segment of the snake attempts to inhabit a wall space
@@ -320,7 +324,7 @@ class SnakeGame : public Window {
     Position placeObject() {
         Position ret;
         do {
-            ret = { getRandom(1, FIELD_WIDTH - 1), getRandom(1, FIELD_HEIGHT - 1) };
+            ret = { getRandom(2, FIELD_WIDTH - 2), getRandom(2, FIELD_HEIGHT - 2) };
         } while (intersectsWithObject(ret));
 
         return ret;
@@ -353,10 +357,10 @@ class SnakeGame : public Window {
         memset(field.fieldText, ' ' - 0x20, sizeof(field.fieldText));
 
         x = 0;
-        x_max = (FIELD_WIDTH + 2) * 4;
+        x_max = FIELD_WIDTH * 4;
         //x_max -= 4;
         y = 0;
-        y_max = (FIELD_HEIGHT + 2) * FONT_HEIGHT;
+        y_max = FIELD_HEIGHT * FONT_HEIGHT;
         //y_max -= 4;
 
         snake.place(placeObject(), Direction::RIGHT);

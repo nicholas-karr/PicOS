@@ -39,6 +39,7 @@
     "files.associations": {
         "compare": "cpp",
         "cstdint": "cpp",
-        "atomic": "cpp"
+        "atomic": "cpp",
+        "array": "cpp"
     }
 }

@@ -64,7 +64,6 @@ int __time_critical_func(core0_vga_main)() {
     screen.init(vgaMode);
 
     build_font();
-    makeFontConvTable();
     loadPadEnd();
 
     TextBox* spinbox1 = new TextBox();

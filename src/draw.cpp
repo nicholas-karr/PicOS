@@ -34,10 +34,9 @@ __not_in_flash("y") uint16_t tokTransparents[] = {
     COLOR_TRANSPARENT, COLOR_TRANSPARENT, COLOR_TRANSPARENT, COLOR_TRANSPARENT
 };
 
-// Converts between ASCII and offsets in the font sprites
-__not_in_flash("z") char fontConv[255] = {};
+constexpr std::array<uint8_t, 255> makeFontConvTable() {
+    std::array<uint8_t, 255> fontConv;
 
-void makeFontConvTable() {
     fontConv[' '] = 0;
 
     for (uint32_t i = 'a'; i <= 'z'; i++) {
@@ -47,7 +46,12 @@ void makeFontConvTable() {
     for (uint32_t i = 'A'; i <= 'Z'; i++) {
         fontConv[i] = i - 0x20;
     }
+
+    return fontConv;
 }
+
+// Converts between ASCII and offsets in the font sprites
+__not_in_flash("z") std::array<uint8_t, 255> fontConv;
 
 void __time_critical_func(drawBackground) (uint16_t y, Layer background) {
     uint32_t* buf = background.data;

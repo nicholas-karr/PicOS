@@ -1,12 +1,15 @@
 #ifndef PICOS_DRAW_H
 #define PICOS_DRAW_H
 
+#include <array>
+
 // Number of pixels to insert to the left of the screen
 // Can be changed at runtime through setHorizontalCalibration
 #define HCAL_DEFAULT 50
 
 #define COLOR_HCAL 0
-#define COLOR_TRANSPARENT (1u << 5u)
+#define COLOR_TRANSPARENT 0
+#define COLOR_SOLID (1u << 5u)
 
 #define SCREEN_WIDTH 1280
 
@@ -33,9 +36,7 @@ extern __not_in_flash("y") uint16_t tokLineEnd[];
 extern __not_in_flash("y") uint16_t tokTransparents[];
 
 // Converts between ASCII and offsets in the font sprites
-extern __not_in_flash("z") char fontConv[255];
-
-extern void makeFontConvTable();
+extern __not_in_flash("z") std::array<uint8_t, 255> fontConv;
 
 // Fill the back layer with the background at scanline y
 void __time_critical_func(drawBackground) (uint16_t y, Layer background);

@@ -18,29 +18,11 @@ set(PICO_SDK_PATH ../deps/pico-sdk)
 set(PICO_EXTRAS_PATH ../deps/pico-extras)
 set(PICO_PLAYGROUND_PATH ../deps/pico-playground)
 
-
-
-
-#Wireless stuff
-
-set(PICO_BOARD pico_w CACHE STRING "Board type")
-file(READ wifi_ssid.txt WIFI_SSID)
-file(READ wifi_password.txt WIFI_PASSWORD)
-
-set(BTSTACK_ROOT ${PICO_SDK_PATH}/lib/btstack)
-set(BTSTACK_EXAMPLE_PATH ${BTSTACK_ROOT}/example)
-set(BTSTACK_3RD_PARTY_PATH ${BTSTACK_ROOT}/3rd-party)
-set(BT_EXAMPLE_COMMON_DIR "${CMAKE_CURRENT_LIST_DIR}")
-
-
-
-
 # Pull in PICO SDK (must be before project)
 include(pico_sdk_import.cmake)
 
 # We also need PICO EXTRAS
 include(pico_extras_import.cmake)
-#include(pico_playground_import.cmake)
 
 project(picos C CXX ASM)
 set(CMAKE_C_STANDARD 11)
@@ -53,8 +35,6 @@ add_executable(picos
         src/mem.S
         src/main.cpp
         src/font8.c
-        src/font6.c
-        src/font10.c  
         )
 
 target_compile_definitions(picos PRIVATE

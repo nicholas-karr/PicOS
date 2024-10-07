@@ -1,31 +1,11 @@
+// Core text rendering functions
+// Render lists of text boxes onto a scan line
+
 .globl tokTransparents
 
 .syntax unified
 .cpu cortex-m0plus
 .thumb
-
-.align 2
-.section .time_critical.testfunc
-.global testfunc
-.type testfunc,%function
-.thumb_func
-// move 160 pointers to 8 pixels into buf
-// relevant: sorted by x_start
-// void testfunc(uint32_t* buf)
-testfunc:
-    ldr r2, [r2] // resolve to pointer to first text box
-    ldr r3, [r2, #8] // get cursor (don't store back for now)
-    ldr r2, [r2] // resolve to [x, x_max]
-
-    eors r0, r0
-    ldrb r0, [r3] // Get char to render
-
-    //mov r0, r3
-
-    bx lr // return
-
-
-
 
 .align 2
 .section .time_critical.render_relevant_text_boxes

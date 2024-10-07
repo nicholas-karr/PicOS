@@ -4,7 +4,7 @@
 // ITS LEGAL TO POINT TO LATER IN THE DMA BUFFER!!!!!!!
 //
 
-#define HCAL_DEFAULT 54 //todo: get rid of the ~10 pixels of right overscan (alignment issues :/)
+#define HCAL_DEFAULT 30 //todo: get rid of the ~10 pixels of right overscan (alignment issues :/)
 
 __not_in_flash("x") uint16_t tokTextLineBegin[] = {
     COMPOSABLE_COLOR_RUN, 0, HCAL_DEFAULT /* hcal */,  // At least 3 pixels of black
@@ -13,17 +13,9 @@ __not_in_flash("x") uint16_t tokTextLineBegin[] = {
 };
 
 __not_in_flash("y") uint16_t tokTextLineEnd[] = {
-#if FRAGMENT_WORDS == 5 || FRAGMENT_WORDS == 3
-        COMPOSABLE_RAW_1P, 0,
-#endif
-#if FRAGMENT_WORDS == 3
-        COMPOSABLE_RAW_1P, 0,
-#endif
-#if FRAGMENT_WORDS >= 4
         COMPOSABLE_RAW_2P, 0,
         0, COMPOSABLE_RAW_1P_SKIP_ALIGN,
         0, 0,
-#endif
         COMPOSABLE_EOL_SKIP_ALIGN, 0xffff
 };
 

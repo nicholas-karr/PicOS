@@ -5,7 +5,8 @@
 #include <string.h>
 #include "pico.h"
 #include "hardware/gpio.h"
-#include "spans.h"
+//#include "spans.h"
+#include "hardware/clocks.h"
 #include "pico/scanvideo.h"
 #include "pico/scanvideo/composable_scanline.h"
 #include "pico/multicore.h"
@@ -33,7 +34,7 @@ std::atomic<uint16_t> frameNum;
 
 extern __not_in_flash("z") uint16_t tokBackground[] = {
     COMPOSABLE_COLOR_RUN, 0, HCAL_DEFAULT /* hcal */,
-    COMPOSABLE_COLOR_RUN, PICO_SCANVIDEO_ALPHA_MASK | PICO_SCANVIDEO_PIXEL_FROM_RGB5(2, 2, 2), 1280,
+    COMPOSABLE_COLOR_RUN, PICO_SCANVIDEO_ALPHA_MASK | PICO_SCANVIDEO_PIXEL_FROM_RGB5(1 << 3, 2, 2), 1280,
     COMPOSABLE_RAW_1P, 0
 };
 
@@ -72,15 +73,15 @@ void __time_critical_func(core1_vga_main)() {
             uint16_t y = scanvideo_scanline_number(scanline_buffer->scanline_id);
             frameNum = scanvideo_frame_number(scanline_buffer->scanline_id);
 
+            // NOT DMA
             //scanline_buffer->fragment_words = FRAGMENT_WORDS;
             drawBackground(y, {scanline_buffer->data, scanline_buffer->data_used});
 
-            //scanline_buffer->fragment_words2 = FRAGMENT_WORDS;
-            renderTextBoxes(y, {scanline_buffer->data3, scanline_buffer->data3_used});
+            scanline_buffer->fragment_words2 = FRAGMENT_WORDS;
+            renderTextBoxes(y, {scanline_buffer->data2, scanline_buffer->data2_used});
 
-            scanline_buffer->fragment_words3 = FRAGMENT_WORDS;
-            drawIcons(y, {scanline_buffer->data2, scanline_buffer->data2_used});
-
+            //scanline_buffer->fragment_words3 = FRAGMENT_WORDS;
+            //drawIcons(y, {scanline_buffer->data2, scanline_buffer->data2_used});
 
             scanline_buffer->status = SCANLINE_OK;
             scanvideo_end_scanline_generation(scanline_buffer);

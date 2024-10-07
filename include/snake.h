@@ -10,6 +10,7 @@
 #include <array> // array
 #include <thread> // sleep_for
 #include <ctime> // time() for seeding RNG
+#include <chrono>
 
 #include "textbox.h"
 #include "device.h"
@@ -382,7 +383,8 @@ class SnakeGame : public Window {
 
             tick((double)FRAME_LATENCY.count());
 
-            std::this_thread::sleep_for(FRAME_LATENCY);
+            //std::this_thread::sleep_for(FRAME_LATENCY);
+            sleep_ms(FRAME_LATENCY.count());
         }
 
         std::cout << "You died! Final Score: " << score;

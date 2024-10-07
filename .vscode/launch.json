@@ -2,61 +2,68 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "C++ Launch",
+            "name": "Pico Debug (Cortex-Debug)",
+            "cwd": "${userHome}/.pico-sdk/openocd/0.12.0+dev/scripts",
+            "executable": "${command:raspberry-pi-pico.launchTargetPath}",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "serverpath": "${userHome}/.pico-sdk/openocd/0.12.0+dev/openocd.exe",
+            "gdbPath": "${command:raspberry-pi-pico.getGDBPath}",
+            "device": "${command:raspberry-pi-pico.getChipUppercase}",
+            "configFiles": [
+                "interface/cmsis-dap.cfg",
+                "target/${command:raspberry-pi-pico.getTarget}.cfg"
+            ],
+            "svdFile": "${userHome}/.pico-sdk/sdk/2.0.0/src/${command:raspberry-pi-pico.getChip}/hardware_regs/${command:raspberry-pi-pico.getChipUppercase}.svd",
+            "runToEntryPoint": "main",
+            // Fix for no_flash binaries, where monitor reset halt doesn't do what is expected
+            // Also works fine for flash binaries
+            "overrideLaunchCommands": [
+                "monitor reset init",
+                "load \"${command:raspberry-pi-pico.launchTargetPath}\""
+            ],
+            "openOCDLaunchCommands": [
+                "adapter speed 5000"
+            ]
+        },
+        {
+            "name": "Pico Debug (Cortex-Debug with external OpenOCD)",
+            "cwd": "${workspaceRoot}",
+            "executable": "${command:raspberry-pi-pico.launchTargetPath}",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "external",
+            "gdbTarget": "localhost:3333",
+            "gdbPath": "${command:raspberry-pi-pico.getGDBPath}",
+            "device": "${command:raspberry-pi-pico.getChipUppercase}",
+            "svdFile": "${userHome}/.pico-sdk/sdk/2.0.0/src/${command:raspberry-pi-pico.getChip}/hardware_regs/${command:raspberry-pi-pico.getChipUppercase}.svd",
+            "runToEntryPoint": "main",
+            // Give restart the same functionality as runToEntryPoint - main
+            "postRestartCommands": [
+                "break main",
+                "continue"
+            ]
+        },
+        {
+            "name": "Pico Debug (C++ Debugger)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceRoot}/build/picos.elf",
-            "args": [],
-            "stopAtEntry": false,
             "cwd": "${workspaceRoot}",
-            "environment": [],
-            "externalConsole": true,
-            "debugServerArgs": "-c \"adapter_khz 5000\" -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c init -c \"reset init\"",
-            "serverLaunchTimeout": 5000,
+            "program": "${command:raspberry-pi-pico.launchTargetPath}",
+            "MIMode": "gdb",
+            "miDebuggerPath": "${command:raspberry-pi-pico.getGDBPath}",
+            "miDebuggerServerAddress": "localhost:3333",
+            "debugServerPath": "${userHome}/.pico-sdk/openocd/0.12.0+dev/openocd.exe",
+            "debugServerArgs": "-f interface/cmsis-dap.cfg -f target/${command:raspberry-pi-pico.getTarget}.cfg -c \"adapter speed 5000\"",
+            "serverStarted": "Listening on port .* for gdb connections",
             "filterStderr": true,
-            "filterStdout": true,
-            "serverStarted": "for gdb connections",
-            "preLaunchTask": "CMake: build",
-            "setupCommands": [
-                { "text": "-target-select remote localhost:3333", "description": "connect to target", "ignoreFailures": true },
-                { "text": "-file-exec-and-symbols ${workspaceRoot}/build/picos.elf", "description": "load file", "ignoreFailures": true },
-                { "text": "-interpreter-exec console \"monitor reset init\"", "ignoreFailures": true },
-                { "text": "-target-download", "description": "flash target", "ignoreFailures": true }
-            ],
-            "logging": {
-                "moduleLoad": true,
-                "trace": true,
-                "engineLogging": true,
-                "programOutput": true,
-                "exceptions": true,
-                "traceResponse": true
+            "hardwareBreakpoints": {
+                "require": true,
+                "limit": 4
             },
-            "linux": {
-                "MIMode": "gdb",
-                "debugServerPath": "/usr/local/bin/openocd",
-                "miDebuggerPath": "/usr/bin/arm-none-eabi-gdb"
-            },
-            "osx": {
-                "MIMode": "gdb",
-                "MIDebuggerPath": "/usr/local/bin/arm-none-eabi-gdb",
-                "debugServerPath": "pyocd-gdbserver"
-            },
-            "windows": {
-                "preLaunchTask": "mbed",
-                "MIMode": "gdb",
-                "MIDebuggerPath": "C:\\Program Files (x86)\\GNU Tools ARM Embedded\\7 2017-q4-major\\bin\\arm-none-eabi-gdb.exe",
-                "debugServerPath": "C:\\openocd-0.10.0\\openocd-0.10.0\\bin-x64\\openocd.exe",
-                "setupCommands": [
-                    { "text": "-environment-cd ${workspaceRoot}\\BUILD\\ARCH_MAX\\GCC_ARM" },
-                    { "text": "-target-select remote localhost:3333", "description": "connect to target", "ignoreFailures": false },
-                    { "text": "-file-exec-and-symbols ${workspaceRootFolderName}.elf", "description": "load file", "ignoreFailures": false},
-                    { "text": "-interpreter-exec console \"monitor endian little\"", "ignoreFailures": false },
-                    { "text": "-interpreter-exec console \"monitor reset\"", "ignoreFailures": false },
-                    { "text": "-interpreter-exec console \"monitor halt\"", "ignoreFailures": false },
-                    { "text": "-interpreter-exec console \"monitor arm semihosting enable\"", "ignoreFailures": false },
-                    { "text": "-target-download", "description": "flash target", "ignoreFailures": false }
-                ]
-            }
-        }
+            "preLaunchTask": "Flash",
+            "svdPath": "${userHome}/.pico-sdk/sdk/2.0.0/src/${command:raspberry-pi-pico.getChip}/hardware_regs/${command:raspberry-pi-pico.getChipUppercase}.svd"
+        },
     ]
 }

@@ -1,3 +1,6 @@
+#ifndef PICOS_FONTBUILD_H
+#define PICOS_FONTBUILD_H
+
 #include "font.h"
 
 // 32 bit words per fragment passed to the renderer
@@ -63,7 +66,7 @@ void build_font() {
         }
     }
 
-    // Transparent character
+    // Transparent character at 96
     const lv_font_fmt_txt_glyph_dsc_t *g = &font->dsc->glyph_dsc[0];
     int bi = 0;
     for (int y = 0; y < FONT_HEIGHT; y++) {
@@ -82,3 +85,5 @@ void build_font() {
         }
     }
 }
+
+#endif // ifndef PICOS_FONTBUILD_H

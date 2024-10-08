@@ -1,10 +1,9 @@
-#include <iostream> // cout
-#include <vector> // vector
-#include <array> // array
-#include <thread> // sleep_for
-#include <ctime> // time() for seeding RNG
-#include <chrono>
+#ifndef PICOS_SNAKE_H
+#define PICOS_SNAKE_H
+
+#include <array>
 #include <string_view>
+#include <stdio.h>
 
 #include "textbox.h"
 #include "util.h"
@@ -17,7 +16,7 @@ constexpr static const int FIELD_WIDTH = 40;
 // Height of the field, in characters
 constexpr static const int FIELD_HEIGHT = 40;
 
-constexpr static const auto FRAME_LATENCY = std::chrono::milliseconds(250);
+constexpr static const auto FRAME_LATENCY = 250; // ms
 constexpr static const bool PASS_THROUGH_WALLS = true;
 constexpr static const int FRUIT_VALUE = 10;
 constexpr static const int FRUIT_COUNT = 10;
@@ -90,9 +89,17 @@ class SnakeSection {
 class Field {
 public:
     // Buffer storing visual state of the field
-    FixedTextBuf<FIELD_WIDTH, FIELD_HEIGHT>& fieldText;
+    FixedTextWindow<FIELD_WIDTH, FIELD_HEIGHT>& fieldText;
 
-    Field(FixedTextBuf<FIELD_WIDTH, FIELD_HEIGHT>& fieldText): fieldText(fieldText) {}
+    char wallCopy[FIELD_WIDTH * FIELD_HEIGHT];
+
+    Field(FixedTextWindow<FIELD_WIDTH, FIELD_HEIGHT>& fieldText_): fieldText(fieldText_) {
+        for (int x = 0; x < FIELD_WIDTH; x++) {
+            for (int y = 0; y < FIELD_HEIGHT; y++) {
+                wallCopy[(y * FIELD_WIDTH) + x] = isWall({ x, y }) ? WALL_CHAR : SPACE_CHAR;
+            }
+        }
+    }
 
     bool isWall(Position position) {
         return position.x == 0 || position.x == (FIELD_WIDTH - 1) ||
@@ -101,11 +108,7 @@ public:
 
     // Remove all characters added to the field, leaving only walls
     void reset() {
-        for (int x = 0; x < FIELD_WIDTH; x++) {
-            for (int y = 0; y < FIELD_HEIGHT; y++) {
-                fieldText.at({x, y}) = isWall({ x, y }) ? WALL_CHAR : SPACE_CHAR;
-            }
-        }
+        fieldText.copyFrom(wallCopy);
     }
 };
 
@@ -150,9 +153,6 @@ class Snake {
 
     void die() {
         dead = true;
-        while (true) {
-            std::cout << "";
-        }
     } // die
 
     bool isDead() {
@@ -160,7 +160,7 @@ class Snake {
     } // isDead
 };
 
-class SnakeGame : public FixedTextBuf<FIELD_WIDTH, FIELD_HEIGHT> {
+class SnakeGame : public FixedTextWindow<FIELD_WIDTH, FIELD_HEIGHT> {
 public:
     int score = 0;
 
@@ -170,7 +170,7 @@ public:
     Snake snake;
     std::array<Fruit, FRUIT_COUNT> fruits;
 
-    SnakeGame() : FixedTextBuf(0, 0), field(*this) {
+    SnakeGame() : FixedTextWindow(0, 1), field(*this) {
         snake.place(placeObject(), Direction::RIGHT);
 
         for (int i = 0; i < (int)fruits.size(); i++) {
@@ -178,8 +178,8 @@ public:
         }
     }
 
-    void tickGame(double deltaTime) {
-        tickSnake(deltaTime);
+    void tickGame() {
+        tickSnake();
 
         field.reset();
 
@@ -189,13 +189,9 @@ public:
         }
 
         snake.draw(field);
-
-        // Output the field
-        //field.print();
-        //std::cout << "Score: " << score << '\n';
     } // tick
 
-    void tickSnake(double /*deltaTime*/) {
+    void tickSnake() {
         // Take tail by value so that it can be appended after all pieces have moved
         SnakeSection tail = snake.sections[snake.sections.size() - 1];
 
@@ -320,8 +316,6 @@ public:
     } // placeObject
 
     void getInput() {
-        std::cout << "History " << (int)buttons[0].history_ << ' ' << (int)buttons[1].history_ << ' ' << (int)buttons[2].history_ << "\r\n";
-
         if (buttons[0].justPressed()) {
             snake.getHead().direction = Direction::LEFT;
         }
@@ -335,27 +329,6 @@ public:
         }
     } // getInput
 
-    void clearConsole() {
-        for (int i = 0; i < 50; i++) {
-            std::cout << '\n';
-        }
-    } // clearConsole
-
-    void run() {
-        while (!snake.isDead()) {
-            clearConsole();
-
-            getInput();
-
-            tick((double)FRAME_LATENCY.count());
-
-            //std::this_thread::sleep_for(FRAME_LATENCY);
-            sleep_ms(FRAME_LATENCY.count());
-        }
-
-        std::cout << "You died! Final Score: " << score;
-    } // run
-
     void tick(uint16_t frameNum) {
         buttons[0].update();
         buttons[1].update();
@@ -366,7 +339,7 @@ public:
 
             getInput();
 
-            tickGame(0);
+            tickGame();
         }
     }
 
@@ -377,30 +350,46 @@ public:
 
 SnakeGame* snakeInst;
 
-constexpr static const int SCORE_WIDTH = 20;
-constexpr static const int SCORE_HEIGHT = 5;
+constexpr static const int SCORE_WIDTH = 28;
+constexpr static const int SCORE_HEIGHT = 8;
 
-class SnakeScore : public FixedTextBuf<SCORE_WIDTH, SCORE_HEIGHT> {
+class SnakeScore : public FixedTextWindow<SCORE_WIDTH, SCORE_HEIGHT> {
     public:
-    SnakeScore(): FixedTextBuf(snakeInst->x_max + FONT_WIDTH, 0) {}
+    char blankBuf[SCORE_WIDTH * SCORE_HEIGHT] = {};
+
+    SnakeScore(): FixedTextWindow(snakeInst->x_max + FONT_WIDTH, 30) {
+        for (int i = 0; i < SCORE_WIDTH * SCORE_HEIGHT; i++) {
+            blankBuf[i] = 0;
+        }
+    }
+
+    void convAscii(char* buf, int len) {
+        for (char* i = buf; i < buf + len; i++) {
+            *i = fontConv[*i];
+        }
+    }
 
     void tick(uint16_t frameNum) {
         if (frameNum % 10 == 0) {
-            setAll(' ');
+            copyFrom(blankBuf);
 
-            int len = snprintf(&at({0, 0}), SCORE_WIDTH, "Score: %d", snakeInst->score);
-            at({len, 0}) = ' ';
+            int len = snprintf(&at({0, 0}), SCORE_WIDTH, "Snake!    By Nicholas Karr");
+            CHECK(len >= 0);
+            convAscii(&at({0, 0}), len);
 
+            len = snprintf(&at({0, 1}), SCORE_WIDTH, "Score: %d", snakeInst->score);
+            CHECK(len >= 0);
+            convAscii(&at({0, 1}), len);
 
             absolute_time_t time = get_absolute_time();
             uint32_t ms = to_ms_since_boot(time);
-            len = snprintf(&at({0, 1}), SCORE_WIDTH, "Time: %d", int(ms / 1000));
-            at({len, 1}) = ' ';
+            len = snprintf(&at({0, 2}), SCORE_WIDTH, "Time: %d", int(ms / 1000));
+            CHECK(len >= 0);
+            convAscii(&at({0, 2}), len);
 
-            len = snprintf(&at({0, 2}), SCORE_WIDTH, "Controls: Left  Right  Menu");
-            at({len, 2}) = ' ';
-
-            convAsciiToRender();
+            len = snprintf(&at({0, 3}), SCORE_WIDTH, "Controls: Menu  Left  Right");
+            CHECK(len >= 0);
+            convAscii(&at({0, 3}), len);
         }
     }
 
@@ -412,9 +401,11 @@ class SnakeScore : public FixedTextBuf<SCORE_WIDTH, SCORE_HEIGHT> {
 SnakeScore* snakeScoreInst;
 
 void initSnakeGame() {
-    srand((unsigned int)std::time(NULL));
+    srand(0);
 
     snakeInst = new SnakeGame();
 
     snakeScoreInst = new SnakeScore();
 }
+
+#endif // ifndef PICOS_SNAKE_H

@@ -40,4 +40,4 @@ typedef struct {
 
 extern const lv_font_t ubuntu_mono8;
 extern const lv_font_t lcd;
-#endif //SOFTWARE_FONT_H
+#endif

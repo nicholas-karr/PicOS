@@ -13,10 +13,10 @@
 .type render_relevant_text_boxes,%function
 .thumb_func
 // Fill buf with 160 pointers to 8 pixels each from the font bitmaps and windows
-// void render_relevant_text_boxes(uint32_t* buf, uint32_t* font, TextLineEntry* entries)
+// extern "C" void render_relevant_text_boxes(uint32_t* buf, void* unused, const TextLineEntry* relevant);
 render_relevant_text_boxes:
     // r0: buf, r1: ptr to font, r2: entries
-    push {r4, r5, r6, r7, r1} // This is a leaf function, don't touch lr
+    push {r4, r5, r6, r7} // This is a leaf function, don't touch lr
 
     subs r2, #12 // undo moving end of loop to front
 
@@ -96,5 +96,5 @@ render_relevant_text_boxes:
         b loop_entries
 
     end:
-    pop  {r1, r4, r5, r6, r7}
+    pop  {r4, r5, r6, r7}
     bx lr

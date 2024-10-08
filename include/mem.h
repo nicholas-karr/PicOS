@@ -1,15 +1,13 @@
-extern "C" {
-    void memcpyFast8(void* __restrict__ dest, void* __restrict__ src, size_t num);
-    void memcpyFast128(void* __restrict__ dest, void* __restrict__ src, size_t num);
+#ifndef PICOS_MEM_H
+#define PICOS_MEM_H
+
+#include <cstring>
+
+// Non-overlapping templated fast memcpy
+template <size_t num>
+void memcpyFast(void* __restrict__ dest, const void* __restrict__ src) {
+    memcpy(dest, src, num);
+    return;
 }
 
-// Non-overlapping fast memcpy
-template <size_t num>
-void memcpyFast(void* __restrict__ dest, void* __restrict__ src) {
-    if constexpr (num % 16 == 0) {
-        memcpyFast128(dest, src, num);
-    }
-    else {
-        memcpyFast8(dest, src, num);
-    }
-}
+#endif // ifndef PICOS_MEM_H

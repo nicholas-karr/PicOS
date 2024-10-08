@@ -30,10 +30,13 @@ extern __not_in_flash("z") uint16_t tokBackground[];
 extern __not_in_flash("x") uint16_t tokTextLineBegin[];
 
 // Fragment that ends a line
-extern __not_in_flash("y") uint16_t tokLineEnd[];
+const extern __not_in_flash("y") uint16_t tokLineEnd[];
 
 // A fragment of just transparent pixels
-extern __not_in_flash("y") uint16_t tokTransparents[];
+const extern __not_in_flash("y") uint16_t tokTransparents[];
+
+#define CHAR_TRANSPARENT '\x7F'
+#define FONT_CHAR_TRANSPARENT ('\x7F' - 0x20)
 
 // Converts between ASCII and offsets in the font sprites
 extern __not_in_flash("z") std::array<uint8_t, 255> fontConv;

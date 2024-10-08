@@ -99,6 +99,7 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "variant": "cpp",
-        "string.h": "c"
+        "string.h": "c",
+        "gpio.h": "c"
     }
 }

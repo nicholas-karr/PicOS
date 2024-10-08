@@ -35,6 +35,8 @@ public:
         }
     }
 
+    // A button has been pressed when it was read as pressed 8 times
+    // This eliminates bouncing
     bool get() {
         return history_ == 255;
     }

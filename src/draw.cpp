@@ -21,7 +21,7 @@ __not_in_flash("x") uint16_t tokTextLineBegin[] = {
 };
 
 // Fragment that ends a line
-__not_in_flash("y") uint16_t tokLineEnd[] = {
+const __not_in_flash("y") uint16_t tokLineEnd[] = {
         COMPOSABLE_RAW_2P, 0,
         0, COMPOSABLE_RAW_1P_SKIP_ALIGN,
         0, 0,
@@ -29,7 +29,7 @@ __not_in_flash("y") uint16_t tokLineEnd[] = {
 };
 
 // A fragment of just transparent pixels
-__not_in_flash("y") uint16_t tokTransparents[] = {
+const __not_in_flash("y") uint16_t tokTransparents[] = {
     COLOR_TRANSPARENT, COLOR_TRANSPARENT, COLOR_TRANSPARENT, COLOR_TRANSPARENT,
     COLOR_TRANSPARENT, COLOR_TRANSPARENT, COLOR_TRANSPARENT, COLOR_TRANSPARENT
 };
@@ -37,13 +37,11 @@ __not_in_flash("y") uint16_t tokTransparents[] = {
 constexpr std::array<uint8_t, 255> makeFontConvTable() {
     std::array<uint8_t, 255> fontConv = {};
 
-    fontConv[' '] = 0;
-
-    for (uint32_t i = 0; i <= 127; i++) {
+    for (uint32_t i = 0x20; i <= 0x20 + 96; i++) {
         fontConv[i] = i - 0x20;
     }
 
-    fontConv[0] = ' ' - 0x20;
+    fontConv[0] = 0;
 
     return fontConv;
 }

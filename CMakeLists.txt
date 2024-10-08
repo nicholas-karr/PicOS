@@ -14,6 +14,8 @@ endif()
 # ====================================================================================
 cmake_minimum_required(VERSION 3.13)
 
+set_property(GLOBAL PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+
 set(PICO_SDK_PATH ../deps/pico-sdk)
 set(PICO_EXTRAS_PATH ../deps/pico-extras)
 set(PICO_PLAYGROUND_PATH ../deps/pico-playground)
@@ -38,6 +40,8 @@ add_executable(picos
         src/draw.cpp
         )
 
+pico_set_binary_type(picos copy_to_ram)
+
 target_compile_definitions(picos PRIVATE
         PICO_SCANVIDEO_SCANLINE_BUFFER_COUNT=4
         #PICO_SCANVIDEO_MAX_SCANLINE_BUFFER_WORDS=600
@@ -60,11 +64,19 @@ pico_add_extra_outputs(picos)
 pico_enable_stdio_usb(picos 1)
 pico_enable_stdio_uart(picos 0)
 
-target_link_options(picos PUBLIC "-flto")
+#pico_set_float_implementation(picos none)
+#pico_set_double_implementation(picos none)
+
+target_compile_options(picos PUBLIC "-Ofast" "-DDO_CHECKS")
+target_link_options(picos PUBLIC "-Ofast")
 
 target_link_libraries(picos PRIVATE
         pico_multicore
+        hardware_gpio
+        hardware_clocks
+        pico_binary_info
+        pico_runtime
         pico_stdlib
         pico_scanvideo_dpi)
 
-include_directories(picos ../pico-playground/scanvideo/render include)
+include_directories(picos include)

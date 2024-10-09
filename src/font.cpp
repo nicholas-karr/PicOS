@@ -1,20 +1,12 @@
-#ifndef PICOS_FONTBUILD_H
-#define PICOS_FONTBUILD_H
-
 #include "font.h"
 
-// 32 bit words per fragment passed to the renderer
-#define FRAGMENT_WORDS 4
+#include "pico.h"
+#include "pico/scanvideo.h"
 
-const lv_font_t *font = &ubuntu_mono8;
-
-#define FONT_WIDTH FRAGMENT_WORDS
-#define FONT_HEIGHT 15
-#define FONT_SIZE_WORDS (FONT_HEIGHT * FRAGMENT_WORDS)
-
+const lv_font_t* font = &ubuntu_mono8;
 uint32_t *font_raw_pixels;
 
-// Blends between white background and black text
+// Transform from an LVGL font to a constant-width bitmap
 void build_font() {
     uint16_t colors[16];
     for (int i = 0; i < count_of(colors); i++) {
@@ -85,5 +77,3 @@ void build_font() {
         }
     }
 }
-
-#endif // ifndef PICOS_FONTBUILD_H

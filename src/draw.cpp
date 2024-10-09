@@ -34,21 +34,6 @@ const __not_in_flash("y") uint16_t tokTransparents[] = {
     COLOR_TRANSPARENT, COLOR_TRANSPARENT, COLOR_TRANSPARENT, COLOR_TRANSPARENT
 };
 
-constexpr std::array<uint8_t, 255> makeFontConvTable() {
-    std::array<uint8_t, 255> fontConv = {};
-
-    for (uint32_t i = 0x20; i <= 0x20 + 96; i++) {
-        fontConv[i] = i - 0x20;
-    }
-
-    fontConv[0] = 0;
-
-    return fontConv;
-}
-
-// Converts between ASCII and offsets in the font sprites
-__not_in_flash("z") std::array<uint8_t, 255> fontConv = makeFontConvTable();
-
 void __time_critical_func(drawBackground) (uint16_t y, Layer background) {
     uint32_t* buf = background.data;
     memcpyFast<16>(buf, tokBackground); buf += 4;
@@ -74,3 +59,9 @@ void setHorizontalCalibration(uint16_t hcal) {
 uint16_t getHorizontalCalibration() {
     return horizontalCalibration; 
 }
+
+// List of all windows to be rendered, sorted by x position
+Window* windows[10];
+int windowCount = 0;
+
+Screen screen;

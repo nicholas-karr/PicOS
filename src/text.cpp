@@ -1,21 +1,24 @@
-#ifndef PICOS_TEXTBOX_H
-#define PICOS_TEXTBOX_H
+#include <text.h>
+#include <font.h>
+#include <window.h>
 
-#include <string_view>
-#include <algorithm>
-#include <vector>
-#include <string>
+#include <array>
+#include <cstring>
 
-#include "util.h"
-#include "fontbuild.h"
-#include "screen.h"
-#include "draw.h"
+constexpr std::array<uint8_t, 255> makeFontConvTable() {
+    std::array<uint8_t, 255> fontConv = {};
 
-#define STR_ALIGNED(S) ( (_Alignas(4) char []){ S } )
+    for (uint32_t i = 0x20; i <= 0x20 + 96; i++) {
+        fontConv[i] = i - 0x20;
+    }
 
-// Round up to the nearest FRAGMENT_SIZE
-#define ROUND_UP(num) ((num + 3) & ~3)
-//#define ROUND_DOWN(num, multiple) (num >= 0 ? (num / multiple) * multiple : ((num - multiple + 1) / multiple) * multiple)
+    fontConv[0] = 0;
+
+    return fontConv;
+}
+
+// Converts between ASCII and offsets in the font sprites
+__not_in_flash("z") std::array<uint8_t, 255> fontConv = makeFontConvTable();
 
 struct __attribute__((__packed__)) TextLineEntry {
     // Text to be rendered
@@ -28,94 +31,12 @@ struct __attribute__((__packed__)) TextLineEntry {
     uint32_t* font;
 };
 
-class Window {
-public:
-    enum class Type {
-        TextBox,
-        SnakeGame,
-        SnakeScore
-    };
-
-    virtual std::string_view lineAt(int y) = 0;
-
-    uint16_t x, x_max;
-    uint16_t y, y_max;
-
-    virtual Type getType() = 0;
-};
-
-// A window stored as a text buffer of fixed size that may be modified
-template <int WIDTH, int HEIGHT>
-class FixedTextWindow : public Window {
-public:
-    using ThisT = FixedTextWindow<WIDTH, HEIGHT>;
-
-    //static_assert(WIDTH % FRAGMENT_WORDS == 0);
-
-    char text[WIDTH * HEIGHT] = {};
-
-    FixedTextWindow(int x, int y) {
-        this->x = x;
-        this->y = y;
-
-        this->x_max = x + WIDTH * FONT_WIDTH;
-        this->y_max = y + HEIGHT * FONT_HEIGHT - 1;
-
-        setAll(' ' - 0x20);
-    }
-
-    // Access the text character at a position on the field
-    char& at(Position pos) {
-        CHECK(pos.x >= 0 && pos.x <= WIDTH && pos.y >= 0 && pos.y <= HEIGHT);
-
-        return text[(pos.y * WIDTH) + pos.x];
-    }
-
-    void setAll(char c) {
-        for (int y = 0; y < HEIGHT; y++) {
-            for (int x = 0; x < WIDTH; x++) {
-                at({x, y}) = c;
-            }
-        }
-    }
-
-    std::string_view lineAt(int y) {
-        y -= this->y;
-        int index = y / FONT_HEIGHT;
-        if (index < 0 || index > HEIGHT + 1) {
-            return nullptr;
-        }
-        
-        return std::string_view(text + index * (WIDTH), WIDTH);
-    }
-
-    void convAsciiToRender() {
-        for (int y = 0; y < HEIGHT; y++) {
-            for (int x = 0; x < WIDTH; x++) {
-                char& c = at({x, y});
-                c = fontConv[c];
-            }
-        }
-    }
-
-    void copyFrom(const char other[WIDTH * HEIGHT]) {
-        //static_assert((WIDTH * HEIGHT) % 4 == 0);
-
-        memcpyFast<WIDTH * HEIGHT>(text, other);
-    }
-};
-
-// List of all windows to be rendered, sorted by x position
-static Window* windows[10];
-static int windowCount = 0;
-
 char altTextBuf[(SCREEN_WIDTH / FONT_WIDTH) * 2] = {};
 char* altTextBufUsed = altTextBuf;
 
 extern "C" void render_relevant_text_boxes(uint32_t* buf, void* unused, const TextLineEntry* relevant);
 
-
-// Fill layer 0 with text
+// Render the list of windows on a scanline
 void __time_critical_func(renderTextBoxes) (uint16_t y, Layer text) {
     Window* relevant[windowCount];
     uint16_t relevantCount = 0;
@@ -208,5 +129,3 @@ void __time_critical_func(renderTextBoxes) (uint16_t y, Layer text) {
 
     altTextBufUsed = altTextBuf;
 }
-
-#endif // ifndef PICOS_TEXTBOX_H

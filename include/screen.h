@@ -1,7 +1,13 @@
 #ifndef PICOS_SCREEN_H
 #define PICOS_SCREEN_H
 
+#include <string_view>
+
 #include "pico/scanvideo.h"
+
+#include "font.h"
+#include "draw.h"
+#include "util.h"
 
 class Screen {
 public:
@@ -22,6 +28,18 @@ public:
     }
 };
 
-static Screen screen;
+extern Screen screen;
+
+class Window {
+public:
+    virtual std::string_view lineAt(int y) = 0;
+
+    uint16_t x, x_max;
+    uint16_t y, y_max;
+};
+
+// List of all windows to be rendered, sorted by x position
+extern Window* windows[10];
+extern int windowCount;
 
 #endif

@@ -33,11 +33,15 @@ set(CMAKE_CXX_STANDARD 20)
 pico_sdk_init()
 
 add_executable(picos
-        src/text.S
+        src/windowRendering.S
         src/mem.S
-        src/main.cpp
-        src/font8.c
         src/draw.cpp
+        src/font.cpp
+        src/fontData8.c
+        src/main.cpp
+        src/text.cpp
+        src/menu.cpp
+        src/input.cpp
         )
 
 pico_set_binary_type(picos copy_to_ram)
@@ -74,6 +78,7 @@ target_link_libraries(picos PRIVATE
         pico_multicore
         hardware_gpio
         hardware_clocks
+        hardware_sleep
         pico_binary_info
         pico_runtime
         pico_stdlib

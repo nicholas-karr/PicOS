@@ -1,6 +1,10 @@
 #ifndef PICOS_UTIL_H
 #define PICOS_UTIL_H
 
+#include <cstdio>
+
+#include "pico/stdlib.h"
+
 class Position {
   public:
     int x, y;
@@ -26,5 +30,8 @@ inline void checkImpl(bool val, const char* file, int line)
 #else
 #define CHECK(val)
 #endif
+
+// Round up to the nearest FRAGMENT_SIZE
+#define ROUND_UP(num) ((num + 3) & ~3)
 
 #endif // ifndef PICOS_UTIL_H

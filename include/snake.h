@@ -3,10 +3,13 @@
 
 #include <array>
 #include <string_view>
+#include <vector>
 #include <stdio.h>
 
-#include "textbox.h"
+#include "draw.h"
+#include "window.h"
 #include "util.h"
+#include "input.h"
 
 // Static configuration
 
@@ -342,10 +345,6 @@ public:
             tickGame();
         }
     }
-
-    Window::Type getType() {
-        return Window::Type::SnakeGame;
-    }
 };
 
 SnakeGame* snakeInst;
@@ -391,10 +390,6 @@ class SnakeScore : public FixedTextWindow<SCORE_WIDTH, SCORE_HEIGHT> {
             CHECK(len >= 0);
             convAscii(&at({0, 3}), len);
         }
-    }
-
-    Window::Type getType() {
-        return Window::Type::SnakeScore;
     }
 };
 

@@ -7,12 +7,6 @@
  * Opts:
  ******************************************************************************/
 
-#ifndef UBUNTU_MONO
-#define UBUNTU_MONO 1
-#endif
-
-#if UBUNTU_MONO
-
 /*-----------------
  *    BITMAPS
  *----------------*/
@@ -704,11 +698,6 @@ static lv_font_fmt_txt_dsc_t font_dsc = {
 /*Initialize a public general font descriptor*/
 const lv_font_t ubuntu_mono8 = {
         .dsc = &font_dsc,          /*The custom font data. Will be accessed by `get_glyph_bitmap/dsc` */
-//        .get_glyph_bitmap = lv_font_get_bitmap_fmt_txt,    /*Function pointer to get glyph's bitmap*/
-//        .get_glyph_dsc = lv_font_get_glyph_dsc_fmt_txt,    /*Function pointer to get glyph's data*/
         .line_height = 15,          /*The maximum line height required by the font*/
         .base_line = 3,             /*Baseline measured from the bottom of the line*/
 };
-
-#endif /*#if UBUNTU_MONO*/
-

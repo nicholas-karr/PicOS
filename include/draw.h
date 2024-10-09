@@ -2,6 +2,9 @@
 #define PICOS_DRAW_H
 
 #include <array>
+#include <cstdint>
+
+#include <pico.h>
 
 // Number of pixels to insert to the left of the screen
 // Can be changed at runtime through setHorizontalCalibration
@@ -35,17 +38,11 @@ const extern __not_in_flash("y") uint16_t tokLineEnd[];
 // A fragment of just transparent pixels
 const extern __not_in_flash("y") uint16_t tokTransparents[];
 
-#define CHAR_TRANSPARENT '\x7F'
-#define FONT_CHAR_TRANSPARENT ('\x7F' - 0x20)
-
-// Converts between ASCII and offsets in the font sprites
-extern __not_in_flash("z") std::array<uint8_t, 255> fontConv;
-
 // Fill the back layer with the background at scanline y
 void __time_critical_func(drawBackground) (uint16_t y, Layer background);
 
+// How far to offset the screen on the left
 void setHorizontalCalibration(uint16_t hcal);
-
 uint16_t getHorizontalCalibration();
 
 #endif // ifndef PICOS_DRAW_H

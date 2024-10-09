@@ -1,5 +1,5 @@
-#ifndef PICOS_BUTTON_H
-#define PICOS_BUTTON_H
+#ifndef PICOS_INPUT_H
+#define PICOS_INPUT_H
 
 #include <array>
 #include "hardware/gpio.h"
@@ -17,7 +17,7 @@ public:
         gpio_set_dir(port_, GPIO_IN);
     }
 
-    inline static bool cleanGet(uint32_t port) {
+    static bool cleanGet(uint32_t port) {
         bool ret = gpio_get(port);
 
         return ret;
@@ -50,6 +50,6 @@ public:
     }
 };
 
-static std::array<Button, 3> buttons = { Button(0), Button(6), Button(11) };
+extern std::array<Button, 3> buttons;
 
-#endif
+#endif // ifndef PICOS_INPUT_H

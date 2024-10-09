@@ -1,16 +1,11 @@
-/*
- * Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
- *
- * SPDX-License-Identifier: BSD-3-Clause
- */
-
-#ifndef _FONT_H
-#define _FONT_H
+#ifndef PICOS_FONT_H
+#define PICOS_FONT_H
 
 #include <stdlib.h>
 
 #include "pico/types.h"
 
+// Standard LVGL font declaration
 typedef struct {
     uint16_t bitmap_index;
     uint16_t adv_w;
@@ -40,4 +35,18 @@ typedef struct {
 
 extern const lv_font_t ubuntu_mono8;
 extern const lv_font_t lcd;
-#endif
+
+extern const lv_font_t* font;
+extern uint32_t *font_raw_pixels;
+
+// 4x32 bit words per fragment passed to the renderer
+#define FRAGMENT_WORDS 4
+
+#define FONT_WIDTH FRAGMENT_WORDS
+#define FONT_HEIGHT 15
+#define FONT_SIZE_WORDS (FONT_HEIGHT * FRAGMENT_WORDS)
+
+// Transform from an LVGL font to a constant-width bitmap
+void build_font();
+
+#endif // ifndef PICOS_FONT_H

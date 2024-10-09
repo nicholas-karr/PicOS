@@ -18,9 +18,10 @@
 #include "pico/stdlib.h"
 
 #include "mem.h"
-#include "button.h"
-#include "textbox.h"
+#include "input.h"
+#include "draw.h"
 #include "snake.h"
+#include "menu.h"
 
 #define vgaMode vga_mode_720p_60
 
@@ -109,6 +110,8 @@ int main() {
 
     // Initialize USB serial
     stdio_init_all();
+
+    bindMenus();
 
     core0_vga_main();
 }

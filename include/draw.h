@@ -8,7 +8,7 @@
 
 // Number of pixels to insert to the left of the screen
 // Can be changed at runtime through setHorizontalCalibration
-#define HCAL_DEFAULT 50
+#define HCAL_DEFAULT 10
 
 #define COLOR_HCAL 0
 #define COLOR_TRANSPARENT 0

@@ -173,7 +173,7 @@ public:
     Snake snake;
     std::array<Fruit, FRUIT_COUNT> fruits;
 
-    SnakeGame() : FixedTextWindow(0, 1), field(*this) {
+    SnakeGame() : FixedTextWindow((SCREEN_WIDTH / 4) / 2 - FIELD_WIDTH / 2, 1), field(*this) {
         snake.place(placeObject(), Direction::RIGHT);
 
         for (int i = 0; i < (int)fruits.size(); i++) {
